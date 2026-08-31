@@ -11,7 +11,7 @@ WebBOM/
 ├── viewer.css          # 查看器樣式表（從 viewer.html 拆分）
 ├── viewer.js           # 查看器核心邏輯（從 viewer.html 拆分）
 ├── sanitize.js         # XSS 防護共用模組
-├── analytics.js        # 前端分析（localStorage 版）
+├── analytics.js        # 前端分析（Cloudflare Worker + localStorage 備援）
 ├── admin.html          # 管理儀表板
 ├── products.json       # 產品清單設定（含收件信箱）
 ├── products/
@@ -24,22 +24,23 @@ WebBOM/
 │   ├── stats.json      # 由 generate_stats.py 產生
 │   ├── generate_stats.py
 │   └── test_generate_stats.py
-├── httpd.js            # 簡易 HTTP 伺服器（含 CSP 安全標頭）
-├── serve.js            # HTTP 伺服器 + localtunnel 隧道
-└── 參考文件/            # 原始參考資料
+├── workers/
+│   ├── analytics-worker.js  # Cloudflare Worker（分析後端）
+│   └── wrangler.toml
+├── deploy.sh           # 一鍵部署至 GitHub Pages + QR Code
+└── 參考文件/            # 原始參考資料（gitignore）
 ```
 
 ## 快速啟動
 
 ```bash
-# 本地測試
+# 本地測試（任選一種）
 cd WebBOM
-node httpd.js
+python3 -m http.server 9001
 # 開啟 http://localhost:9001
 
-# 建立公網隧道（給外地測試用）
-node serve.js
-# 查看 serve.log 取得公網網址
+# 或用 node
+npx serve -p 9001
 ```
 
 ## 如何新增產品
@@ -86,6 +87,32 @@ P01,1,400198,C型扣環<R-47>,1
 - **CSP 標頭**：防止 XSS 與資源注入
 - **SHA-256 密碼**：管理員密碼使用 hash 儲存，不暴露明文
 - **XSS 防護**：所有使用者可控資料經過 HTML 轉義
+- **SVG 安全注入**：使用 DOMParser 解析 SVG，過濾 `<script>` 與事件屬性
+- **Worker Origin 白名單**：只接受已授權網站的 POST 事件
+- **Worker API Key**：`/stats` 端點需要 API key 驗證
 
-## 部署（永久網址）
+## 部署
+
+### 前端（GitHub Pages）
+
+```bash
+bash deploy.sh
+# 自動 git push → 等待 GitHub Pages → 生成 QR Code
+```
+
+### 分析後端（Cloudflare Worker）
+
+```bash
+cd workers
+# 修改 wrangler.toml 中的 STATS_API_KEY 為你的隨機 key
+# 產生方式：node -e "console.log(crypto.randomUUID())"
+npx wrangler deploy
+```
+
+部署後在前端頁面設定 Worker URL 和 Stats API key：
+```html
+<script>
+  var WEBOM_WORKER_URL = 'https://your-worker.workers.dev';
+  var WEBOM_STATS_KEY = 'your-stats-api-key';
+</script>
 ```

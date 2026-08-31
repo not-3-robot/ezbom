@@ -265,6 +265,7 @@
       }
     });
     updateStats();
+    saveSelection();
     showToast('已復原 (剩餘 ' + undoStack.length + ' 步)');
   }
 
@@ -283,11 +284,11 @@
 
       S.safeText(document.getElementById('product-title'), productConfig.name);
 
-      // 解析收件信箱
+      // 解析收件信箱（優先序：localStorage > 產品設定 > 全域設定）
       var globalEmail = manifest.emailTo || '';
       var productEmail = productConfig.emailTo || '';
       var savedEmail = localStorage.getItem('webBom_emailTo') || '';
-      var finalEmail = savedEmail || productEmail || globalEmail || 'sales@example.com';
+      var finalEmail = savedEmail || productEmail || globalEmail;
       document.getElementById('email-input').value = finalEmail;
 
       // 載入 BOM CSV
@@ -305,8 +306,22 @@
       if (!svgRes.ok) throw new Error('無法載入爆炸圖 SVG');
       var svgContent = await svgRes.text();
 
-      // 渲染 SVG
-      document.getElementById('svg-container').innerHTML = svgContent;
+      // 安全注入 SVG：使用 DOMParser 解析，過濾危險元素
+      var parser = new DOMParser();
+      var doc = parser.parseFromString(svgContent, 'image/svg+xml');
+      // 移除 <script> 標籤和事件屬性
+      doc.querySelectorAll('script').forEach(function(el) { el.remove(); });
+      var svgEl = doc.querySelector('svg');
+      if (!svgEl) throw new Error('SVG 格式錯誤');
+      // 移除所有 on* 事件屬性
+      svgEl.querySelectorAll('*').forEach(function(el) {
+        var attrs = el.getAttributeNames();
+        attrs.forEach(function(name) {
+          if (name.indexOf('on') === 0) el.removeAttribute(name);
+        });
+      });
+      document.getElementById('svg-container').innerHTML = '';
+      document.getElementById('svg-container').appendChild(svgEl);
       document.getElementById('loading').classList.add('hidden');
 
       // 處理 SVG 互動
@@ -450,6 +465,7 @@
       }
     });
     updateStats();
+    saveSelection();
     showToast('已全選 ' + selectedParts.size + ' 個零件');
   };
 
@@ -462,12 +478,42 @@
     });
     selectedParts.clear();
     updateStats();
+    saveSelection();
     showToast('已清除全部選擇');
   };
 
   // ========================================================================
-  // 8. 選擇邏輯
+  // 8. 選擇邏輯（含 localStorage 持久化）
   // ========================================================================
+  var SELECTION_STORAGE_KEY = 'webBom_selection_';
+
+  function saveSelection() {
+    try {
+      var data = {};
+      selectedParts.forEach(function(entry, partId) {
+        data[partId] = entry.customQty;
+      });
+      localStorage.setItem(SELECTION_STORAGE_KEY + productId, JSON.stringify(data));
+    } catch (e) { /* localStorage 不可用時靜默失敗 */ }
+  }
+
+  function restoreSelection() {
+    try {
+      var raw = localStorage.getItem(SELECTION_STORAGE_KEY + productId);
+      if (!raw) return;
+      var data = JSON.parse(raw);
+      Object.keys(data).forEach(function(partId) {
+        var part = bomData.find(function(p) { return p.id === partId; });
+        if (part) {
+          selectedParts.set(partId, { part: part, customQty: data[partId] });
+          updateBOMSelection(partId, true);
+          updateSVGSelection(partId, true);
+        }
+      });
+      if (selectedParts.size > 0) updateStats();
+    } catch (e) { /* 解析失敗時靜默 */ }
+  }
+
   function togglePartSelection(partId) {
     var wasSelected = selectedParts.has(partId);
     pushUndoState();
@@ -492,6 +538,7 @@
       }
     }
     updateStats();
+    saveSelection();
   }
 
   function updateBOMSelection(partId, selected) {
@@ -557,6 +604,8 @@
     });
 
     document.getElementById('email-btn').disabled = selectedParts.size === 0;
+    var copyBtn = document.getElementById('copy-btn');
+    if (copyBtn) copyBtn.disabled = selectedParts.size === 0;
   }
 
   window.updateQty = function(partId, val) {
@@ -566,6 +615,7 @@
       var entry = selectedParts.get(partId);
       selectedParts.set(partId, { part: entry.part, customQty: qty });
       updateStats();
+      saveSelection();
     }
   };
 
@@ -575,6 +625,7 @@
     updateBOMSelection(partId, false);
     updateSVGSelection(partId, false);
     updateStats();
+    saveSelection();
   };
 
   // ========================================================================
@@ -582,6 +633,14 @@
   // ========================================================================
   window.sendInquiry = function() {
     if (selectedParts.size === 0) return;
+
+    var emailTo = document.getElementById('email-input').value.trim();
+    if (!emailTo) {
+      showToast('請先輸入詢價收件信箱');
+      var emailInput = document.getElementById('email-input');
+      if (emailInput) emailInput.focus();
+      return;
+    }
 
     var productName = productConfig ? productConfig.name : '';
     var subject = encodeURIComponent(
@@ -601,7 +660,6 @@
 
     var confirmMsg = '即將打開郵件客戶端，發送 ' + selectedParts.size + ' 種零件（共 ' + total + ' 件）的詢價請求？';
     if (confirm(confirmMsg)) {
-      var emailTo = document.getElementById('email-input').value.trim();
 
       if (window.WebBOMAnalytics) {
         window.WebBOMAnalytics.inquiry({
@@ -624,6 +682,47 @@
   };
 
   window._fallbackMailtoUrl = '';
+
+  // 複製詢價清單到剪貼簿（替代 mailto 的可靠方案）
+  window.copyInquiry = function() {
+    if (selectedParts.size === 0) return;
+
+    var emailTo = document.getElementById('email-input').value.trim();
+    var productName = productConfig ? productConfig.name : '';
+    var lines = ['零件詢價清單', ''];
+    if (productName) lines.push('產品：' + productName);
+    if (emailTo) lines.push('收件信箱：' + emailTo);
+    lines.push('日期：' + new Date().toLocaleDateString('zh-TW'), '');
+    lines.push('零件清單：');
+    selectedParts.forEach(function(e) {
+      var p = e.part;
+      lines.push('• ' + p.partNumber + ' - ' + p.name + ' (數量: ' + e.customQty + ')');
+    });
+    var total = Array.from(selectedParts.values()).reduce(function(s, e) { return s + e.customQty; }, 0);
+    lines.push('', '總計：' + selectedParts.size + ' 種，共 ' + total + ' 件');
+
+    var text = lines.join('\n');
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function() {
+        showToast('詢價清單已複製到剪貼簿');
+      }).catch(function() {
+        showCopyFallback(text);
+      });
+    } else {
+      showCopyFallback(text);
+    }
+  };
+
+  function showCopyFallback(text) {
+    var ta = document.getElementById('fallback-text');
+    if (ta) {
+      ta.value = text;
+      document.getElementById('mailto-fallback').style.display = 'flex';
+    } else {
+      showToast('請手動複製');
+    }
+  }
 
   window.showMailtoFallback = function(email, text, mailtoUrl) {
     document.getElementById('fallback-email').textContent = email;
@@ -769,12 +868,19 @@
       console.log('已處理 ' + foundParts + ' 個零件');
       if (!bomInitialized) { initBOMList(); }
 
-      // resize 重新定位標籤
+      // 恢復上次選擇（localStorage 持久化）
+      restoreSelection();
+
+      // resize 重新定位標籤（避免重複綁定：先移除舊 listener）
+      if (window._webbomResizeHandler) {
+        window.removeEventListener('resize', window._webbomResizeHandler);
+      }
       var labelTimer;
-      window.addEventListener('resize', function() {
+      window._webbomResizeHandler = function() {
         clearTimeout(labelTimer);
         labelTimer = setTimeout(function() { updateLabels(svg, container); }, 200);
-      });
+      };
+      window.addEventListener('resize', window._webbomResizeHandler);
     });
   }
 

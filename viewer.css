@@ -214,6 +214,7 @@ body {
 }
 .email-btn:hover { background: #657A4A; }
 .email-btn:disabled { background: #ccc; cursor: not-allowed; }
+#copy-btn:disabled { color: #ccc; cursor: not-allowed; border-color: #E6E3DA; }
 
 /* 搜索 + 工具欄 */
 .search-box {

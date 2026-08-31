@@ -128,10 +128,10 @@
     <!-- Tab 切換 -->
     <div class="card">
         <div class="tab-bar">
-            <button class="active" onclick="switchTab('overview')">總覽</button>
-            <button onclick="switchTab('parts')">零件分析</button>
-            <button onclick="switchTab('errors')">錯誤追蹤</button>
-            <button onclick="switchTab('raw')">原始數據</button>
+            <button class="active" onclick="switchTab('overview', event)">總覽</button>
+            <button onclick="switchTab('parts', event)">零件分析</button>
+            <button onclick="switchTab('errors', event)">錯誤追蹤</button>
+            <button onclick="switchTab('raw', event)">原始數據</button>
         </div>
 
         <!-- 總覽 -->
@@ -168,8 +168,11 @@
     </div>
 </div>
 
-<!-- Cloudflare Worker URL：部署後替換為你的 Worker 網址 -->
-<script>var WEBOM_WORKER_URL = 'https://webbom-analytics.notnotnotrobot.workers.dev';</script>
+<!-- Cloudflare Worker 設定：部署後替換為你的 Worker 網址和 API key -->
+<script>
+var WEBOM_WORKER_URL = 'https://webbom-analytics.notnotnotrobot.workers.dev';
+var WEBOM_STATS_KEY = 'webbom-stats-key-change-me'; // 需與 wrangler.toml 中 STATS_API_KEY 一致
+</script>
 <script src="sanitize.js"></script>
 <script src="analytics.js"></script>
 <script>
@@ -365,10 +368,10 @@ function renderStats(stats, analytics) {
         + '</div>';
 }
 
-function switchTab(tab) {
+function switchTab(tab, evt) {
     currentTab = tab;
     document.querySelectorAll('.tab-bar button').forEach(function(b) { b.classList.remove('active'); });
-    event.target.classList.add('active');
+    if (evt && evt.target) evt.target.classList.add('active');
     ['overview', 'parts', 'errors', 'raw'].forEach(function(t) {
         document.getElementById('tab-' + t).style.display = t === tab ? 'block' : 'none';
     });

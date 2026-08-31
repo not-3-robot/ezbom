@@ -5,7 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
     <title>WebBOM 查看器</title>
     <link rel="stylesheet" href="viewer.css">
-    <script>var WEBOM_WORKER_URL = 'https://webbom-analytics.notnotnotrobot.workers.dev';</script>
+    <script>
+    var WEBOM_WORKER_URL = 'https://webbom-analytics.notnotnotrobot.workers.dev';
+    var WEBOM_STATS_KEY = 'webbom-stats-key-change-me';
+    </script>
     <script src="sanitize.js"></script>
     <script src="analytics.js"></script>
 </head>
@@ -59,14 +62,17 @@
             <div style="margin-bottom:8px;">
                 <label style="font-size:12px;color:#87867F;display:block;margin-bottom:4px;">詢價收件信箱</label>
                 <div style="display:flex;gap:6px;">
-                    <input type="email" class="search-box" id="email-input" value="sales@example.com"
-                        style="flex:1;margin-bottom:0;" placeholder="輸入郵箱...">
+                    <input type="email" class="search-box" id="email-input" value=""
+                        style="flex:1;margin-bottom:0;" placeholder="輸入詢價收件信箱...">
                     <button onclick="saveEmail()" style="padding:8px 12px;border:1px solid #E6E3DA;border-radius:6px;background:white;cursor:pointer;font-size:12px;white-space:nowrap;">儲存</button>
                 </div>
             </div>
 
             <!-- 發送按鈕 -->
-            <button class="email-btn" onclick="sendInquiry()" id="email-btn" disabled>發送詢價郵件</button>
+            <div style="display:flex;gap:6px;">
+                <button class="email-btn" onclick="sendInquiry()" id="email-btn" disabled style="flex:1;">發送詢價郵件</button>
+                <button onclick="copyInquiry()" id="copy-btn" style="padding:12px 16px;border:1px solid #E6E3DA;border-radius:8px;background:white;cursor:pointer;font-size:14px;color:#D97757;font-weight:600;white-space:nowrap;" title="複製詢價清單到剪貼簿">📋 複製</button>
+            </div>
 
             <!-- BOM 清單 -->
             <div>

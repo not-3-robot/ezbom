@@ -154,19 +154,20 @@ def test_compute_stats_missing_fields():
 
 
 def test_compute_stats_invalid_quantity():
-    """無效數量應拋出例外（嚴格模式）"""
+    """無效數量應被安全跳過，不崩潰"""
     records = [
         {"Date": "2025-01-01", "Customer": "A", "PartNumber": "P001",
          "PartName": "X", "Quantity": "not-a-number", "UnitPrice": "10.0",
          "OrderNo": "O1"},
+        {"Date": "2025-01-02", "Customer": "A", "PartNumber": "P002",
+         "PartName": "Y", "Quantity": "5", "UnitPrice": "10.0",
+         "OrderNo": "O2"},
     ]
-    try:
-        stats = compute_stats(records)
-        # 如果沒拋例外，至少不應 crash
-        assert True
-    except ValueError:
-        # 預期行為：無效數字拋例外
-        pass
+    stats = compute_stats(records)
+    # 無效數量的零件應 qty=0，但不崩潰
+    assert len(stats["topParts"]) == 2
+    p001 = next(p for p in stats["topParts"] if p["partNumber"] == "P001")
+    assert p001["totalQty"] == 0  # 無效數量被視為 0
 
 
 def test_compute_stats_date_edge_cases():

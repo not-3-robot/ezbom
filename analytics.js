@@ -76,10 +76,18 @@
     pushRemote(evt);
   }
 
+  // /stats 端點的 API key（需與 Worker wrangler.toml 中的 STATS_API_KEY 一致）
+  var STATS_API_KEY = (typeof WEBOM_STATS_KEY !== 'undefined') ? WEBOM_STATS_KEY : '';
+
   function fetchRemoteSummary(callback) {
     if (!WORKER_BASE) { callback(null); return; }
-    fetch(WORKER_BASE + '/stats')
-      .then(function(r) { return r.json(); })
+    var headers = { 'Content-Type': 'application/json' };
+    if (STATS_API_KEY) headers['X-API-Key'] = STATS_API_KEY;
+    fetch(WORKER_BASE + '/stats', { headers: headers })
+      .then(function(r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      })
       .then(function(data) { callback(data); })
       .catch(function() { callback(null); });
   }
@@ -156,13 +164,11 @@
     getSummary: function(callback) {
       fetchRemoteSummary(function(remoteData) {
         if (remoteData) {
-          var localSummary = buildLocalSummary();
-          remoteData.pageviews += localSummary.pageviews;
-          remoteData.selects += localSummary.selects;
-          remoteData.inquiries += localSummary.inquiries;
-          remoteData.errors += localSummary.errors;
+          // Worker 有資料時直接使用，不重複加 localStorage（避免雙重計算）
+          // localStorage 中的事件已同步發送至 Worker，兩者不重疊加總
           callback(remoteData);
         } else {
+          // Worker 不可用時，降級使用 localStorage
           callback(buildLocalSummary());
         }
       });

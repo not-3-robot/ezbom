@@ -22,6 +22,25 @@ PURCHASES_DIR = DATA_DIR / "purchases"
 OUTPUT = DATA_DIR / "stats.json"
 
 
+def safe_int(val, default=0):
+    """安全轉換為整數，無效值回傳 default"""
+    try:
+        return int(val)
+    except (ValueError, TypeError):
+        try:
+            return int(float(val))
+        except (ValueError, TypeError):
+            return default
+
+
+def safe_float(val, default=0.0):
+    """安全轉換為浮點數，無效值回傳 default"""
+    try:
+        return float(val)
+    except (ValueError, TypeError):
+        return default
+
+
 def load_purchases():
     """讀取所有產品的採購記錄 CSV"""
     purchases_by_product = defaultdict(list)
@@ -59,7 +78,7 @@ def compute_stats(records):
 
     for r in records:
         pn = r.get("PartNumber", "").strip()
-        qty = int(r.get("Quantity", 0))
+        qty = safe_int(r.get("Quantity", 0))
         part_qty[pn] += qty
         part_count[pn] += 1
         if pn and not part_name.get(pn):
@@ -77,8 +96,8 @@ def compute_stats(records):
     for r in records:
         c = r.get("Customer", "未知客戶").strip()
         customer_data[c]["orderCount"] += 1
-        customer_data[c]["totalQty"] += int(r.get("Quantity", 0))
-        customer_data[c]["totalAmount"] += float(r.get("UnitPrice", 0)) * int(r.get("Quantity", 0))
+        customer_data[c]["totalQty"] += safe_int(r.get("Quantity", 0))
+        customer_data[c]["totalAmount"] += safe_float(r.get("UnitPrice", 0)) * safe_int(r.get("Quantity", 0))
         customer_data[c]["orders"].add(r.get("OrderNo", "").strip())
 
     top_customers = sorted(
@@ -94,8 +113,8 @@ def compute_stats(records):
         date = r.get("Date", "").strip()
         month = date[:7] if len(date) >= 7 else date
         monthly[month]["orderCount"] += 1
-        monthly[month]["totalQty"] += int(r.get("Quantity", 0))
-        monthly[month]["totalAmount"] += float(r.get("UnitPrice", 0)) * int(r.get("Quantity", 0))
+        monthly[month]["totalQty"] += safe_int(r.get("Quantity", 0))
+        monthly[month]["totalAmount"] += safe_float(r.get("UnitPrice", 0)) * safe_int(r.get("Quantity", 0))
         monthly[month]["orders"].add(r.get("OrderNo", "").strip())
 
     monthly_stats = sorted(
@@ -121,7 +140,7 @@ def compute_stats(records):
                 "frequency": 0,
             }
         h = part_history[pn]
-        h["totalQty"] += int(r.get("Quantity", 0))
+        h["totalQty"] += safe_int(r.get("Quantity", 0))
         h["orderCount"] += 1
         h["customers"].add(r.get("Customer", "").strip())
         date = r.get("Date", "").strip()

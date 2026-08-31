@@ -127,8 +127,8 @@
         "totalQty": 90,
         "orderCount": 4,
         "customers": [
-          "冠杰工業",
           "永豐機械",
+          "冠杰工業",
           "宏達傳動"
         ],
         "lastPurchase": "2025-05-15",
@@ -174,8 +174,8 @@
         "totalQty": 20,
         "orderCount": 2,
         "customers": [
-          "冠杰工業",
-          "永豐機械"
+          "永豐機械",
+          "冠杰工業"
         ],
         "lastPurchase": "2025-04-01",
         "frequency": 6.0

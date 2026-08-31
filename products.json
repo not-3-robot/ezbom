@@ -1,6 +1,6 @@
 {
   "title": "齒輪箱零件詢價系統",
-  "emailTo": "sales@example.com",
+  "emailTo": "",
   "products": [
     {
       "id": "p-type",
