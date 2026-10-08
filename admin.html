@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WebBOM 管理儀表板</title>
+    <title>EzBOM 管理儀表板</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -109,7 +109,7 @@
 </div>
 
 <div class="header">
-    <h1>📊 WebBOM 管理儀表板<span id="datasource-badge" style="font-size:11px;font-weight:400;color:#87867F;margin-left:8px;"></span></h1>
+    <h1>📊 EzBOM 管理儀表板<span id="datasource-badge" style="font-size:11px;font-weight:400;color:#87867F;margin-left:8px;"></span></h1>
     <div class="nav">
         <a href="index.html">← 返回產品列表</a>
         <button class="refresh-btn" onclick="refreshData()">🔄 刷新</button>
@@ -170,8 +170,8 @@
 
 <!-- Cloudflare Worker 設定：部署後替換為你的 Worker 網址和 API key -->
 <script>
-var WEBOM_WORKER_URL = 'https://webbom-analytics.notnotnotrobot.workers.dev';
-var WEBOM_STATS_KEY = 'webbom-stats-key-change-me'; // 需與 wrangler.toml 中 STATS_API_KEY 一致
+var EZBOM_WORKER_URL = 'https://ezbom-analytics.notnotnotrobot.workers.dev';
+var EZBOM_STATS_KEY = 'ezbom-stats-key-change-me'; // 需與 wrangler.toml 中 STATS_API_KEY 一致
 </script>
 <script src="sanitize.js"></script>
 <script src="analytics.js"></script>
@@ -210,7 +210,7 @@ async function verifyAdmin() {
     const validHash = ADMIN_PASSWORD_HASH || DEFAULT_HASH;
 
     if (hash === validHash) {
-        sessionStorage.setItem('webBom_admin', '1');
+        sessionStorage.setItem('ezbom_admin', '1');
         document.getElementById('password-overlay').style.display = 'none';
         loadDashboard();
     } else {
@@ -220,7 +220,7 @@ async function verifyAdmin() {
     }
 }
 
-if (sessionStorage.getItem('webBom_admin') === '1') {
+if (sessionStorage.getItem('ezbom_admin') === '1') {
     document.getElementById('password-overlay').style.display = 'none';
     loadDashboard();
 } else {
@@ -241,13 +241,13 @@ async function loadDashboard() {
         var products = productRes.ok ? (await productRes.json()).products || [] : [];
 
         // 非同步取得分析數據（優先 Worker，降級 localStorage）
-        window.WebBOMAnalytics.getSummary(function(analyticsSummary) {
+        window.EzBOMAnalytics.getSummary(function(analyticsSummary) {
             renderKPIs(stats, products, analyticsSummary);
             renderStats(stats, analyticsSummary);
         });
 
-        if (window.WebBOMAnalytics) {
-            window.WebBOMAnalytics.pageview('admin');
+        if (window.EzBOMAnalytics) {
+            window.EzBOMAnalytics.pageview('admin');
         }
     } catch (err) {
         console.error('Dashboard load error:', err);
@@ -273,7 +273,7 @@ function renderKPIs(stats, products, analytics) {
     var badge = document.getElementById('datasource-badge');
     if (badge) {
         var hasRemote = analytics && analytics.total !== undefined && analytics.total > 0;
-        var hasWorker = (typeof WEBOM_WORKER_URL !== 'undefined' && WEBOM_WORKER_URL !== '');
+        var hasWorker = (typeof EZBOM_WORKER_URL !== 'undefined' && EZBOM_WORKER_URL !== '');
         if (hasWorker) badge.textContent = '☁️ Cloudflare Worker';
         else badge.textContent = '(📱 本機 localStorage)';
     }
@@ -342,8 +342,8 @@ function renderStats(stats, analytics) {
           }).join('') + '</table>';
 
     // 錯誤記錄（來自 localStorage）
-    if (analytics && analytics.errors > 0 && window.WebBOMAnalytics) {
-        var csv = window.WebBOMAnalytics.exportCSV();
+    if (analytics && analytics.errors > 0 && window.EzBOMAnalytics) {
+        var csv = window.EzBOMAnalytics.exportCSV();
         var lines = csv.split('\n').slice(1); // skip header
         var errorLines = lines.filter(function(l) { return l.indexOf('"error"') >= 0; });
         document.getElementById('error-log').innerHTML = errorLines.length === 0
@@ -382,21 +382,21 @@ function refreshData() {
 }
 
 function exportAnalytics() {
-    if (!window.WebBOMAnalytics) return;
-    var csv = window.WebBOMAnalytics.exportCSV();
+    if (!window.EzBOMAnalytics) return;
+    var csv = window.EzBOMAnalytics.exportCSV();
     if (!csv) { alert('暫無數據'); return; }
     var blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
     var url = URL.createObjectURL(blob);
     var a = document.createElement('a');
     a.href = url;
-    a.download = 'webbom-analytics-' + new Date().toISOString().slice(0, 10) + '.csv';
+    a.download = 'ezbom-analytics-' + new Date().toISOString().slice(0, 10) + '.csv';
     a.click();
     URL.revokeObjectURL(url);
 }
 
 function clearAnalytics() {
     if (!confirm('確定要清除所有分析數據？此操作不可恢復。')) return;
-    if (window.WebBOMAnalytics) window.WebBOMAnalytics.clear();
+    if (window.EzBOMAnalytics) window.EzBOMAnalytics.clear();
     loadDashboard();
 }
 </script>

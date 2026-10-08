@@ -1,4 +1,4 @@
-// WebBOM Analytics — Cloudflare Worker + KV
+// EzBOM Analytics — Cloudflare Worker + KV
 // 接收事件、儲存至 KV、提供彙總 API
 //
 // 安全策略：
@@ -17,7 +17,7 @@ const ALLOWED_ORIGINS = [
 
 // /stats 端點驗證用 API key（部署時更改）
 // 產生方式：crypto.randomUUID()
-const STATS_API_KEY = env => (env.STATS_API_KEY || 'webbom-stats-default-key-2026');
+const STATS_API_KEY = env => (env.STATS_API_KEY || 'ezbom-stats-default-key-2026');
 
 const SUMMARY_KEY = 'summary:global';
 const RECENT_ERRORS_KEY = 'recent_errors';

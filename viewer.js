@@ -1,5 +1,5 @@
 /**
- * WebBOM Viewer — 核心邏輯
+ * EzBOM Viewer — 核心邏輯
  * 從 viewer.html 提取，獨立維護
  *
  * 功能：
@@ -17,7 +17,7 @@
 (function () {
   'use strict';
 
-  var S = window.WebBOMSanitize || { escapeHtml: function(s) { return String(s||''); } };
+  var S = window.EzBOMSanitize || { escapeHtml: function(s) { return String(s||''); } };
 
   // ========================================================================
   // 1. 全域狀態
@@ -45,7 +45,7 @@
   var DEFAULT_HASH = '6d23d6842954d957582968838f89ae5302f8628f6dc861b3187d18d92d997b87';
 
   window._isAdmin = function() {
-    return sessionStorage.getItem('webBom_admin') === '1';
+    return sessionStorage.getItem('ezbom_admin') === '1';
   };
 
   window.verifyAdmin = function() {
@@ -57,7 +57,7 @@
     hashPassword(pw).then(function(hash) {
       var validHash = ADMIN_PASSWORD_HASH || DEFAULT_HASH;
       if (hash === validHash) {
-        sessionStorage.setItem('webBom_admin', '1');
+        sessionStorage.setItem('ezbom_admin', '1');
         closePwModal();
         var statsIcon = document.getElementById('stats-tab-icon');
         if (statsIcon) statsIcon.textContent = '📊';
@@ -287,7 +287,7 @@
       // 解析收件信箱（優先序：localStorage > 產品設定 > 全域設定）
       var globalEmail = manifest.emailTo || '';
       var productEmail = productConfig.emailTo || '';
-      var savedEmail = localStorage.getItem('webBom_emailTo') || '';
+      var savedEmail = localStorage.getItem('ezbom_emailTo') || '';
       var finalEmail = savedEmail || productEmail || globalEmail;
       document.getElementById('email-input').value = finalEmail;
 
@@ -328,16 +328,16 @@
       processSVGAfterLoad();
 
       // Analytics
-      if (window.WebBOMAnalytics) {
-        window.WebBOMAnalytics.pageview(productId);
+      if (window.EzBOMAnalytics) {
+        window.EzBOMAnalytics.pageview(productId);
       }
 
     } catch (err) {
       S.safeText(document.getElementById('loading-error'), '錯誤：' + err.message);
       document.getElementById('loading-error').style.display = 'block';
       S.safeText(document.getElementById('loading-text'), '載入失敗');
-      if (window.WebBOMAnalytics) {
-        window.WebBOMAnalytics.error('Product load failed: ' + err.message, err.stack, '', 0, 0);
+      if (window.EzBOMAnalytics) {
+        window.EzBOMAnalytics.error('Product load failed: ' + err.message, err.stack, '', 0, 0);
       }
     }
   }
@@ -485,7 +485,7 @@
   // ========================================================================
   // 8. 選擇邏輯（含 localStorage 持久化）
   // ========================================================================
-  var SELECTION_STORAGE_KEY = 'webBom_selection_';
+  var SELECTION_STORAGE_KEY = 'ezbom_selection_';
 
   function saveSelection() {
     try {
@@ -522,9 +522,9 @@
       selectedParts.delete(partId);
       updateBOMSelection(partId, false);
       updateSVGSelection(partId, false);
-      if (window.WebBOMAnalytics) {
+      if (window.EzBOMAnalytics) {
         var p = bomData.find(function(item) { return item.id === partId; });
-        window.WebBOMAnalytics.select('remove', p || { id: partId });
+        window.EzBOMAnalytics.select('remove', p || { id: partId });
       }
     } else {
       var part = bomData.find(function(p) { return p.id === partId; });
@@ -532,8 +532,8 @@
         selectedParts.set(partId, { part: part, customQty: part.quantity });
         updateBOMSelection(partId, true);
         updateSVGSelection(partId, true);
-        if (window.WebBOMAnalytics) {
-          window.WebBOMAnalytics.select('add', part);
+        if (window.EzBOMAnalytics) {
+          window.EzBOMAnalytics.select('add', part);
         }
       }
     }
@@ -661,8 +661,8 @@
     var confirmMsg = '即將打開郵件客戶端，發送 ' + selectedParts.size + ' 種零件（共 ' + total + ' 件）的詢價請求？';
     if (confirm(confirmMsg)) {
 
-      if (window.WebBOMAnalytics) {
-        window.WebBOMAnalytics.inquiry({
+      if (window.EzBOMAnalytics) {
+        window.EzBOMAnalytics.inquiry({
           totalParts: selectedParts.size,
           totalQty: total,
           emailDomain: emailTo.split('@')[1] || emailTo,
@@ -757,7 +757,7 @@
   window.saveEmail = function() {
     var email = document.getElementById('email-input').value.trim();
     if (email) {
-      localStorage.setItem('webBom_emailTo', email);
+      localStorage.setItem('ezbom_emailTo', email);
       showToast('收件信箱已儲存：' + email);
     } else {
       showToast('請輸入有效的郵箱地址');
@@ -872,15 +872,15 @@
       restoreSelection();
 
       // resize 重新定位標籤（避免重複綁定：先移除舊 listener）
-      if (window._webbomResizeHandler) {
-        window.removeEventListener('resize', window._webbomResizeHandler);
+      if (window._ezbomResizeHandler) {
+        window.removeEventListener('resize', window._ezbomResizeHandler);
       }
       var labelTimer;
-      window._webbomResizeHandler = function() {
+      window._ezbomResizeHandler = function() {
         clearTimeout(labelTimer);
         labelTimer = setTimeout(function() { updateLabels(svg, container); }, 200);
       };
-      window.addEventListener('resize', window._webbomResizeHandler);
+      window.addEventListener('resize', window._ezbomResizeHandler);
     });
   }
 
@@ -996,7 +996,7 @@
 
   window.shareProduct = function() {
     var url = window.location.href;
-    var title = (productConfig ? productConfig.name : 'WebBOM') + ' - 零件詢價';
+    var title = (productConfig ? productConfig.name : 'EzBOM') + ' - 零件詢價';
     if (navigator.share) {
       navigator.share({
         title: title,

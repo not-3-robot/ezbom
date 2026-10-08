@@ -1,4 +1,4 @@
-# WebBOM Loop 模板集
+# EzBOM Loop 模板集
 
 > 齒輪箱零件詢價系統的工作流程模板。
 > 每次執行對應任務時，將下方模板 + 你的輸入資料一起餵給 Claude。
@@ -64,7 +64,7 @@
 - 變更內容：[貼上 diff 或描述]
 
 ### 審查清單
-1. **XSS**：所有使用者可控資料是否經過 `WebBOMSanitize.escapeHtml()`？
+1. **XSS**：所有使用者可控資料是否經過 `EzBOMSanitize.escapeHtml()`？
 2. **路徑遍歷**：伺服器端 `httpd.js` 是否過濾 `../`？
 3. **CSP**：`httpd.js` 的 CSP 標頭是否涵蓋新增資源？
 4. **密碼安全**：管理員密碼是否使用 SHA-256 hash（禁止明文）？
@@ -105,7 +105,7 @@
 
 ### 自我檢查
 - [ ] 符合 Karpathy 準則（不重構沒壞的東西）
-- [ ] 遵循 WebBOM 既有 code style
+- [ ] 遵循 EzBOM 既有 code style
 - [ ] `node httpd.js` 可正常啟動
 - [ ] 前端功能手動測試通過
 

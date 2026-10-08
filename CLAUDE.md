@@ -1,4 +1,4 @@
-# WebBOM 專案指引
+# EzBOM 專案指引
 
 > 本檔案給 Claude Code 讀：進來先看這裡。詳細進度見 `.claude/` 目錄。
 
@@ -9,7 +9,7 @@
 ## 怎麼跑 / 怎麼部署
 
 ```bash
-cd /Users/zone/Documents/Project/webBOM
+cd "/Users/zone/Documents/Sales/樣本＆使用手冊/冠亞/公司＆產品簡介/EzBOM"
 
 # 本地預覽
 python3 -m http.server 9001   # 開 http://localhost:9001
@@ -19,7 +19,7 @@ bash deploy.sh
 # 或 npm run deploy
 ```
 
-正式網址：`https://not-3-robot.github.io/webbom`
+正式網址：`https://not-3-robot.github.io/ezbom`
 查看器：`/viewer.html?product=p-type`　管理儀表板：`/admin.html`
 
 ## 架構

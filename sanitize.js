@@ -1,5 +1,5 @@
 /**
- * WebBOM Sanitize — XSS 防護共用模組
+ * EzBOM Sanitize — XSS 防護共用模組
  *
  * 所有 innerHTML 操作前應先透過此模組轉義使用者可控資料。
  * 零依賴，可獨立載入。
@@ -34,7 +34,7 @@
    * 安全 innerHTML — 先轉義變數再拼接 HTML
    *
    * 用法：
-   *   el.innerHTML = WebBOMSanitize.safeHTML('<div>${name}</div>', { name: userInput });
+   *   el.innerHTML = EzBOMSanitize.safeHTML('<div>${name}</div>', { name: userInput });
    *
    * @param {string} template 含 ${key} 佔位符的模板
    * @param {object} values 鍵值對應
@@ -76,7 +76,7 @@
   // ============================================================
   // 公開 API
   // ============================================================
-  window.WebBOMSanitize = {
+  window.EzBOMSanitize = {
     escapeHtml: escapeHtml,
     safeHTML: safeHTML,
     safeText: safeText,

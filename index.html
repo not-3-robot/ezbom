@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>WebBOM 產品列表</title>
+    <title>EzBOM 產品列表</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -78,8 +78,8 @@
         }
     </style>
     <script>
-    var WEBOM_WORKER_URL = 'https://webbom-analytics.notnotnotrobot.workers.dev';
-    var WEBOM_STATS_KEY = 'webbom-stats-key-change-me';
+    var EZBOM_WORKER_URL = 'https://ezbom-analytics.notnotnotrobot.workers.dev';
+    var EZBOM_STATS_KEY = 'ezbom-stats-key-change-me';
     </script>
     <script src="sanitize.js"></script>
     <script src="analytics.js"></script>
@@ -130,7 +130,7 @@
                 card.className = 'product-card';
                 // 提取型號縮寫做為預覽文字
                 const modelHint = (product.model || product.id).substring(0, 6).toUpperCase();
-                const esc = window.WebBOMSanitize ? window.WebBOMSanitize.escapeHtml : function(s) { return String(s||''); };
+                const esc = window.EzBOMSanitize ? window.EzBOMSanitize.escapeHtml : function(s) { return String(s||''); };
                 card.innerHTML = `
                     <div class="card-preview" style="font-size:48px;color:#D97757;background:#F0EEE6;">
                         ⚙ ${esc(modelHint)}
@@ -147,15 +147,15 @@
             });
 
             // Analytics: 產品列表載入成功
-            if (window.WebBOMAnalytics) {
-                window.WebBOMAnalytics.pageview('index');
+            if (window.EzBOMAnalytics) {
+                window.EzBOMAnalytics.pageview('index');
             }
 
         } catch (err) {
             document.getElementById('product-grid').innerHTML =
                 '<div class="empty-state"><h2>無法載入產品清單</h2><p>' + err.message + '</p></div>';
-            if (window.WebBOMAnalytics) {
-                window.WebBOMAnalytics.error('Product list load failed: ' + err.message, err.stack, '', 0, 0);
+            if (window.EzBOMAnalytics) {
+                window.EzBOMAnalytics.error('Product list load failed: ' + err.message, err.stack, '', 0, 0);
             }
         }
     }
@@ -212,7 +212,7 @@
         // 優先使用 Web Share API (行動裝置原生分享)
         if (navigator.share) {
             navigator.share({
-                title: 'WebBOM 齒輪箱零件詢價系統',
+                title: 'EzBOM 齒輪箱零件詢價系統',
                 text: '查看齒輪箱爆炸圖與 BOM 零件清單',
                 url: url
             }).catch(function() {});

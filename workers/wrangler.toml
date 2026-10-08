@@ -1,11 +1,11 @@
-name = "webbom-analytics"
+name = "ezbom-analytics"
 main = "analytics-worker.js"
 compatibility_date = "2024-01-01"
 
 # /stats 端點驗證用 API key
 # 產生方式：node -e "console.log(crypto.randomUUID())"
 [vars]
-STATS_API_KEY = "webbom-stats-key-change-me"
+STATS_API_KEY = "ezbom-stats-key-change-me"
 
 [[kv_namespaces]]
 binding = "ANALYTICS"

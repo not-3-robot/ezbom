@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-WebBOM generate_stats.py 單元測試
+EzBOM generate_stats.py 單元測試
 
 執行方式：
-    cd WebBOM && python3 -m pytest data/test_generate_stats.py -v
+    cd EzBOM && python3 -m pytest data/test_generate_stats.py -v
     或
-    cd WebBOM && python3 data/test_generate_stats.py
+    cd EzBOM && python3 data/test_generate_stats.py
 """
 
 import sys

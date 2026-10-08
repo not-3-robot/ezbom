@@ -1,4 +1,4 @@
-# WebBOM 開發進度
+# EzBOM 開發進度
 
 最後更新：2026-06-10
 
@@ -130,12 +130,12 @@ SVG 要求：Inkscape 導出的 SVG，每個零件的 `<g>` 要有 `inkscape:lab
 ## 2026-06-04 — GitHub Pages 部署 + localStorage 分析 + 手機相容
 
 ### GitHub Pages 部署 (最終方案)
-- [x] 部署到 `https://not-3-robot.github.io/webbom`
+- [x] 部署到 `https://not-3-robot.github.io/ezbom`
 - [x] 透過 GitHub API 自動啟用 Pages（branch: main, path: /）
 - [x] 部署狀態: built ✅
 - [x] 首頁、viewer、admin 全部 200，零錯誤
 
-> Vercel (`webbom.vercel.app`) 曾成功部署，但中國大陸手機 4G 網路無法存取（CDN 節點全在美國）
+> Vercel (`ezbom.vercel.app`) 曾成功部署，但中國大陸手機 4G 網路無法存取（CDN 節點全在美國）
 > Netlify 同樣面臨中國封鎖，`netlify.app` 域名被牆
 > Gitee Pages 多次嘗試未成功（可能需實名認證或人工審核）
 > serveo.net 隧道在中國手機可存取，作為備用方案
@@ -205,14 +205,14 @@ SVG 要求：Inkscape 導出的 SVG，每個零件的 `<g>` 要有 `inkscape:lab
   - `GET /stats` — 彙總統計（pageviews、inquiries、errors、devices、products、topParts、recentErrors）
   - KV 自動過期：90 天
 - [x] 建立 KV Namespace：`ANALYTICS`（id: `db15922249ed4ef2a0966ded2fad058b`）
-- [x] 部署至 `https://webbom-analytics.notnotnotrobot.workers.dev`
+- [x] 部署至 `https://ezbom-analytics.notnotnotrobot.workers.dev`
 - [x] admin.html 標頭顯示 `☁️ Cloudflare Worker`，標記當前使用雲端數據源
-- [x] index.html、viewer.html、admin.html 均配置 `WEBOM_WORKER_URL`，事件自動上傳雲端
+- [x] index.html、viewer.html、admin.html 均配置 `EZBOM_WORKER_URL`，事件自動上傳雲端
 - [x] `getSummary(callback)` 非同步 API：優先讀取 Worker，降級合併 localStorage
 
 ### 一鍵部署腳本 deploy.sh
 - [x] `bash deploy.sh`：自動 git push → 等待 GitHub Pages 部署 → 生成 QR 碼 PNG → 自動打開
-- [x] QR 碼輸出至 `~/Downloads/webBOM-qrcode.png`，URL：`https://not-3-robot.github.io/webbom/`
+- [x] QR 碼輸出至 `~/Downloads/EzBOM-qrcode.png`，URL：`https://not-3-robot.github.io/ezbom/`
 - [x] 不需再手動處理 localtunnel、IP、port
 
 ### 檔案變更摘要

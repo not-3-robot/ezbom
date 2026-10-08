@@ -1,10 +1,10 @@
 #!/bin/bash
-# WebBOM deploy - push to GitHub Pages & generate QR code
+# EzBOM deploy - push to GitHub Pages & generate QR code
 set -e
 
 DIR="$(cd "$(dirname "$0")" && pwd)"
-PAGES_URL="https://not-3-robot.github.io/webbom/"
-QR_FILE="$HOME/Downloads/webBOM-qrcode.png"
+PAGES_URL="https://not-3-robot.github.io/ezbom/"
+QR_FILE="$HOME/Downloads/EzBOM-qrcode.png"
 
 cd "$DIR"
 

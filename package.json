@@ -1,7 +1,7 @@
 {
-  "name": "webbom",
+  "name": "ezbom",
   "version": "1.0.0",
-  "description": "WebBOM — 爆炸圖零件清單與詢價系統",
+  "description": "EzBOM — 爆炸圖零件清單與詢價系統",
   "private": true,
   "scripts": {
     "deploy": "bash deploy.sh",
@@ -9,7 +9,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/not-3-robot/webbom.git"
+    "url": "https://github.com/not-3-robot/ezbom.git"
   },
   "license": "UNLICENSED"
 }

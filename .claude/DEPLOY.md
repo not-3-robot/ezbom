@@ -1,4 +1,4 @@
-# WebBOM 部署文件
+# EzBOM 部署文件
 
 最後更新：2026-06-10
 
@@ -7,12 +7,12 @@
 ## 正式網址
 
 ```
-https://not-3-robot.github.io/webbom
+https://not-3-robot.github.io/ezbom
 ```
 
 ## 部署平台
 
-**GitHub Pages**（`not-3-robot/webbom` 倉庫，main 分支，root 目錄）
+**GitHub Pages**（`not-3-robot/ezbom` 倉庫，main 分支，root 目錄）
 
 ## 頁面路徑
 
@@ -26,14 +26,14 @@ https://not-3-robot.github.io/webbom
 
 ### 一鍵部署（推薦）
 ```bash
-cd /Users/zone/Documents/Project/webBOM
+cd /Users/zone/Documents/Project/EzBOM
 bash deploy.sh
 ```
 自動完成：git push → 等待 GitHub Pages 部署 → 生成 QR 碼 → 自動打開。
 
 ### 手動部署
 ```bash
-cd /Users/zone/Documents/Project/webBOM
+cd /Users/zone/Documents/Project/EzBOM
 git add -A
 git commit -m "描述修改內容"
 git push
@@ -45,7 +45,7 @@ GitHub Pages 會在 push 後自動重新部署，約 30 秒生效。
 
 | 方案 | 結果 | 原因 |
 |------|------|------|
-| Vercel | `webbom.vercel.app` 曾部署成功 | 中國手機 4G 無法存取（CDN 全在美國） |
+| Vercel | `ezbom.vercel.app` 曾部署成功 | 中國手機 4G 無法存取（CDN 全在美國） |
 | Netlify | 未完成部署 | `netlify.app` 域名在中國被牆 |
 | Gitee Pages | 多次嘗試 404 | 可能需實名認證或人工審核 |
 | Cloudflare Pages | 未完成 | 需 Cloudflare API Token |
@@ -81,7 +81,7 @@ GitHub Pages (靜態託管)
 
 ```
 Cloudflare (分析後端)
-└── webbom-analytics.workers.dev
+└── ezbom-analytics.workers.dev
     ├── POST /event  → KV 儲存
     └── GET /stats   → 彙總回傳
 ```
@@ -89,14 +89,14 @@ Cloudflare (分析後端)
 ## 數據搜集
 
 ### 雲端分析（Cloudflare Worker）
-- Worker URL：`https://webbom-analytics.notnotnotrobot.workers.dev`
+- Worker URL：`https://ezbom-analytics.notnotnotrobot.workers.dev`
 - 事件：POST `/event`，90 天自動過期
 - 彙總：GET `/stats`
 - KV Namespace：`ANALYTICS`（db15922249ed4ef2a0966ded2fad058b）
 - **所有裝置共享同一份數據，換裝置不消失**
 
 ### 本地備援（localStorage）
-- `webbom_analytics` key，上限 1000 筆
+- `ezbom_analytics` key，上限 1000 筆
 - Worker 不可用時自動降級至 localStorage
 
 ### KV 容量與限制

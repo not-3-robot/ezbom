@@ -1,17 +1,17 @@
 /**
- * WebBOM Analytics — Cloudflare Worker 版 + localStorage 備援
+ * EzBOM Analytics — Cloudflare Worker 版 + localStorage 備援
  *
  * 事件同時發送至遠端 Worker 與 localStorage。
  * 管理員儀表板優先讀取 Worker 彙總，Worker 未部署時降級至 localStorage。
  *
- * Worker 部署後，在 admin.html 設定：<script>var WEBOM_WORKER_URL='...';</script>
+ * Worker 部署後，在 admin.html 設定：<script>var EZBOM_WORKER_URL='...';</script>
  */
 (function () {
   'use strict';
 
-  var STORAGE_KEY = 'webbom_analytics';
+  var STORAGE_KEY = 'ezbom_analytics';
   var MAX_EVENTS = 1000;
-  var WORKER_BASE = (typeof WEBOM_WORKER_URL !== 'undefined') ? WEBOM_WORKER_URL : '';
+  var WORKER_BASE = (typeof EZBOM_WORKER_URL !== 'undefined') ? EZBOM_WORKER_URL : '';
 
   function detectDevice() {
     var ua = navigator.userAgent;
@@ -77,7 +77,7 @@
   }
 
   // /stats 端點的 API key（需與 Worker wrangler.toml 中的 STATS_API_KEY 一致）
-  var STATS_API_KEY = (typeof WEBOM_STATS_KEY !== 'undefined') ? WEBOM_STATS_KEY : '';
+  var STATS_API_KEY = (typeof EZBOM_STATS_KEY !== 'undefined') ? EZBOM_STATS_KEY : '';
 
   function fetchRemoteSummary(callback) {
     if (!WORKER_BASE) { callback(null); return; }
@@ -120,7 +120,7 @@
 
   var deviceInfo = detectDevice();
 
-  window.WebBOMAnalytics = {
+  window.EzBOMAnalytics = {
     pageview: function(product) {
       pushEvent({ type:'pageview', timestamp:new Date().toISOString(),
         product:product||getProductId(),
@@ -182,16 +182,16 @@
   window.addEventListener('error', function(e) {
     if (e.target && (e.target instanceof HTMLScriptElement ||
         e.target instanceof HTMLLinkElement || e.target instanceof HTMLImageElement)) {
-      window.WebBOMAnalytics.error('Resource load error: '+(e.target.src||e.target.href||'unknown'),
+      window.EzBOMAnalytics.error('Resource load error: '+(e.target.src||e.target.href||'unknown'),
         '', e.filename, e.lineno, e.colno);
       return;
     }
-    window.WebBOMAnalytics.error(e.message||'Unknown error', e.error?e.error.stack:'',
+    window.EzBOMAnalytics.error(e.message||'Unknown error', e.error?e.error.stack:'',
       e.filename, e.lineno, e.colno);
   }, true);
 
   window.addEventListener('unhandledrejection', function(e) {
-    window.WebBOMAnalytics.error('Unhandled Promise: '+(e.reason?String(e.reason).substring(0,200):'unknown'),
+    window.EzBOMAnalytics.error('Unhandled Promise: '+(e.reason?String(e.reason).substring(0,200):'unknown'),
       e.reason?e.reason.stack:'', '', 0, 0);
   });
 })();

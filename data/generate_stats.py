@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-WebBOM 採購統計生成器
+EzBOM 採購統計生成器
 
 從 data/purchases/*.csv 讀取採購記錄，計算統計數據並輸出到 data/stats.json。
 
@@ -164,7 +164,7 @@ def compute_stats(records):
 
 
 def main():
-    print("📊 WebBOM 採購統計生成器")
+    print("📊 EzBOM 採購統計生成器")
     print("=" * 40)
 
     purchases = load_purchases()

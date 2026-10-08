@@ -1,11 +1,11 @@
-# WebBOM — 齒輪箱零件詢價系統
+# EzBOM — 齒輪箱零件詢價系統
 
 靜態網頁 BOM 查看器，讓客戶透過爆炸圖選取零件、調整數量、發送詢價郵件。內建採購統計儀表板（管理員限定）。
 
 ## 專案結構
 
 ```
-WebBOM/
+EzBOM/
 ├── index.html          # 產品列表首頁
 ├── viewer.html         # 爆炸圖查看器（HTML 結構）
 ├── viewer.css          # 查看器樣式表（從 viewer.html 拆分）
@@ -35,7 +35,7 @@ WebBOM/
 
 ```bash
 # 本地測試（任選一種）
-cd WebBOM
+cd EzBOM
 python3 -m http.server 9001
 # 開啟 http://localhost:9001
 
@@ -112,7 +112,7 @@ npx wrangler deploy
 部署後在前端頁面設定 Worker URL 和 Stats API key：
 ```html
 <script>
-  var WEBOM_WORKER_URL = 'https://your-worker.workers.dev';
-  var WEBOM_STATS_KEY = 'your-stats-api-key';
+  var EZBOM_WORKER_URL = 'https://your-worker.workers.dev';
+  var EZBOM_STATS_KEY = 'your-stats-api-key';
 </script>
 ```

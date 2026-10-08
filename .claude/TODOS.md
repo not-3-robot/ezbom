@@ -1,4 +1,4 @@
-# WebBOM 待解決問題
+# EzBOM 待解決問題
 
 最後更新：2026-06-10
 
@@ -16,7 +16,7 @@
 
 ### 分析系統雲端化
 - [x] analytics.js 重構 → 雙通道：Cloudflare Worker (主) + localStorage (備援)
-- [x] Cloudflare Worker 部署於 `webbom-analytics.notnotnotrobot.workers.dev`
+- [x] Cloudflare Worker 部署於 `ezbom-analytics.notnotnotrobot.workers.dev`
 - [x] KV 儲存事件，90 天自動過期
 - [x] 後台標頭顯示 `☁️ Cloudflare Worker`（集中式數據）
 - [x] 所有頁面（index/viewer/admin）自動上傳事件至 Worker
@@ -29,7 +29,7 @@
 ## 2026-06-04 已完成
 
 ### 部署與數據搜集
-- [x] GitHub Pages 部署（`not-3-robot.github.io/webbom`）
+- [x] GitHub Pages 部署（`not-3-robot.github.io/ezbom`）
 - [x] localStorage 版 analytics.js（pageview / select / inquiry / error）
 - [x] 管理儀表板 admin.html（KPI、設備分佈、錯誤追蹤、CSV 匯出）
 - [x] 手機跨平台相容（viewport-fit、safe-area、SVG filter、mailto 備用）
@@ -75,7 +75,7 @@
 - **限制**：靜態頁面無法寫入本地文件，需要後端 API 或 File System Access API（僅 Chrome）
 
 ### DWG → SVG 轉換
-- **需求**：現有參考圖紙中的 .dwg 文件需要轉為 SVG 才能在 WebBOM 中使用
+- **需求**：現有參考圖紙中的 .dwg 文件需要轉為 SVG 才能在 EzBOM 中使用
 - **方案**：AutoCAD 導出 SVG，或用 `ezdxf` + `svglib` Python 庫批量轉換
 
 ---
@@ -120,4 +120,4 @@
 - **狀態**：待討論
 - **方案 A**：手動編輯 CSV（簡單但繁瑣）
 - **方案 B**：網頁上錄入表單 + localStorage 暫存
-- **方案 C**：從 ERP/進銷存系統導出後轉為 WebBOM 格式
+- **方案 C**：從 ERP/進銷存系統導出後轉為 EzBOM 格式

@@ -1,4 +1,4 @@
-# WebBOM 專案優化清單
+# EzBOM 專案優化清單
 
 > 審查日期：2026-08-10
 > 審查範圍：全部原始碼（viewer.js / viewer.html / viewer.css / admin.html / index.html / sanitize.js / analytics.js / workers / products.json / deploy.sh / 文件）
@@ -7,19 +7,19 @@
 
 ## 🔴 P0 - 安全問題（建議優先處理）
 
-### #1 `WEBOM_STATS_KEY` 從未真正設定
+### #1 `EZBOM_STATS_KEY` 從未真正設定
 
 **位置**：`viewer.html:10`、`index.html:82`、`admin.html:174`
 
 三個 HTML 檔案裡都是預設佔位值：
 ```js
-var WEBOM_STATS_KEY = 'webbom-stats-key-change-me';
+var EZBOM_STATS_KEY = 'ezbom-stats-key-change-me';
 ```
 
 Worker 端也是同樣的預設值：
 ```js
 // workers/analytics-worker.js:20
-const STATS_API_KEY = env => (env.STATS_API_KEY || 'webbom-stats-default-key-2026');
+const STATS_API_KEY = env => (env.STATS_API_KEY || 'ezbom-stats-default-key-2026');
 ```
 
 **問題**：API key 保護形同虛設，任何人都能讀取統計數據。而且 key 本身就寫在前端 HTML 裡，等於完全公開。
@@ -47,7 +47,7 @@ return '<tr><td>' + (i+1) + '</td><td style="font-weight:600">' + p.partNumber +
 
 `sanitize.js` 已載入但 `admin.html` 中完全沒有使用。
 
-**修復方向**：所有動態插入的值都用 `WebBOMSanitize.escapeHtml()` 包裹。
+**修復方向**：所有動態插入的值都用 `EzBOMSanitize.escapeHtml()` 包裹。
 
 ---
 
@@ -127,10 +127,10 @@ var ADMIN_PASSWORD_HASH = '';  // 永遠空字串
 **位置**：`CLAUDE.md:12`
 
 ```bash
-cd /Users/zone/Documents/Project/webBOM  # ← 舊路徑
+cd "/Users/zone/Documents/Sales/樣本＆使用手冊/冠亞/公司＆產品簡介/EzBOM"  # ← 現行路徑
 ```
 
-實際路徑為 `/Users/zone/Documents/Sales/樣本＆使用手冊/冠亞/公司＆產品簡介/webBOM`
+實際路徑為 `/Users/zone/Documents/Sales/樣本＆使用手冊/冠亞/公司＆產品簡介/EzBOM`
 
 **修復方向**：更新路徑。
 
