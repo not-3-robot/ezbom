@@ -7,3 +7,5 @@ serve.log
 node_modules/
 參考文件/
 參考圖紙/
+.wrangler/
+workers/.wrangler/
