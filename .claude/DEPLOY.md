@@ -26,14 +26,14 @@ https://not-3-robot.github.io/ezbom
 
 ### 一鍵部署（推薦）
 ```bash
-cd /Users/zone/Documents/Project/EzBOM
+cd "/Users/zone/Documents/Sales/樣本＆使用手冊/冠亞/公司＆產品簡介/EzBOM"
 bash deploy.sh
 ```
 自動完成：git push → 等待 GitHub Pages 部署 → 生成 QR 碼 → 自動打開。
 
 ### 手動部署
 ```bash
-cd /Users/zone/Documents/Project/EzBOM
+cd "/Users/zone/Documents/Sales/樣本＆使用手冊/冠亞/公司＆產品簡介/EzBOM"
 git add -A
 git commit -m "描述修改內容"
 git push
