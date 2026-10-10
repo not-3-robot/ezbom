@@ -85,10 +85,17 @@ def balloon_mode(doc, msp):
                                  "r": r})
                 paired.add(i)
                 break
+    # ── 自動標定 ────────────────────────────────────────────────────────────
+    # 下面三個閾值本來是照 K型 一張圖量出來寫死的（d_axis>60 / crowd≤1 /
+    # ARC r∈[24,30]），換圖要手動複驗。改成從「本圖已配對的編號氣球」推導，
+    # 換圖自動跟著走。K型 標定結果 = 原硬編碼值（驗收：輸出須逐位元組一致）。
+    paired_r = sorted(circles[i].dxf.radius for i in paired)
+    r_med = paired_r[len(paired_r) // 2] if paired_r else 27.0
+    ARC_R_LO, ARC_R_HI = r_med - 3, r_med + 3        # K型: 27±3 = [24,30]
+
     # 氣球不一定畫成 CIRCLE：K型 氣球#16 畫成 ARC r=27、sweep=355°（數字 16 就在
     # 圈內），配對只認 CIRCLE 所以漏配——流程筆記記的「文字16 無圈」其實是偵測缺口，
-    # 不是源圖缺口。r∈[24,30] 是照 34 顆編號氣球的 r=27 取的，sweep≥270 才算整圈
-    # （同半徑的零件弧 sweep 只有 13~24°，不會誤配）。
+    # 不是源圖缺口。sweep≥270 才算整圈（同半徑的零件弧 sweep 只有 13~24°，不會誤配）。
     balloon_arc_ids = set()
     for t in texts:
         tx, ty = t.dxf.insert.x, t.dxf.insert.y
@@ -98,7 +105,7 @@ def balloon_mode(doc, msp):
             if id(a) in balloon_arc_ids:
                 continue
             r = a.dxf.radius
-            if not 24 <= r <= 30:
+            if not ARC_R_LO <= r <= ARC_R_HI:
                 continue
             if (a.dxf.end_angle - a.dxf.start_angle) % 360 < 270:
                 continue
@@ -188,11 +195,19 @@ def balloon_mode(doc, msp):
                 best = d
         return best
 
+    # 自動標定①：離軸閘門 = 編號氣球距軸線「最小值」×0.7。
+    # 原理：氣球永遠畫在軸線外、零件永遠坐在軸線上；取最貼近軸線的那顆氣球再
+    # 打 7 折當安全邊距。K型：min=84 → 58.8（原本硬編碼 60，等價）。
+    axis_d = sorted(d_axis(b["x"], b["y"]) for b in balloons)
+    AXIS_GATE = max(10.0, axis_d[0] * 0.7) if axis_d else 60.0
+
     # 註記泡泡（無文字版）：完整等軸測圈 a∈[10,50] 若帶徑向引線
     # （一端貼圈 ≤1.35a、另端 ≥2.5a）＝沒有號碼的註記圈。
-    # K型 實測：雙同心圈 a=27.8+35.0 + layer0 引線 78.6，即使用者指的泡泡球。
-    # 同心同尺度的完整圈一併刪（雙環結構），零件上的軸承/孔紋（a>50 或
-    # 不帶徑向引線的 partial 弧）不受影響。
+    # ⚠️ 這條規則很容易被兩個東西騙過，都已加閘門：
+    #   ① 組立軸線（端點落在零件中心 → 條件永遠成立）→ AXIS_GATE 擋
+    #   ② 編號氣球的引線（氣球指的一定是零件）→ 下方 has_balloon_leader 擋
+    # K型 修前因此誤刪 13 顆軸承（雙同心圈 a=27.8+35.0 當時被誤記成「使用者指的
+    # 泡泡球」，實測那些全是零件）；加閘門後 13 → 0。
     def radial_leaders(cx, cy, rr):
         out = []
         for L in lines:
@@ -211,7 +226,7 @@ def balloon_mode(doc, msp):
             continue
         cx, cy = e.dxf.center.x, e.dxf.center.y
         # 閘門：坐在組立軸線上的一定是零件（見上方 d_axis 說明）。
-        if d_axis(cx, cy) <= 60:
+        if d_axis(cx, cy) <= AXIS_GATE:
             continue
         leads = radial_leaders(cx, cy, a)
         if not leads:
@@ -236,11 +251,13 @@ def balloon_mode(doc, msp):
     # 氣球不一定畫成「滿圓」：S1 是 a=10 sweep=180° 的半圓頭（外加一條
     # 129.6 長的折引線），另有一顆 a=15.5 sweep=314° 的近圓頭。它們不含數字、
     # 也不在軸線上，上面兩條規則都漏抓 → 頭和引線都留在圖上（使用者回報 S1）。
-    # 三道閘門，基準都是同一張圖的 34 顆編號氣球：
-    #   ① 距組立軸線 >60   （氣球 84~494；零件 0~16）
-    #   ② 1.5×尺寸內浮空點 ≤1（34 顆氣球實測 1~2；取 1 是刻意比基準嚴，
-    #      擋掉一顆 crowd=2 的存疑頭——它旁邊有同心 a=4.5 環、又貼著 a=80
-    #      的零件弧，更像零件特徵，而且使用者沒回報它，不動）
+    # 三道閘門，基準都是「本圖的編號氣球」，閾值自動標定（見上方 AXIS_GATE /
+    # CROWD_GATE），換圖不用手調：
+    #   ① 距組立軸線 > AXIS_GATE（= 氣球最小距離×0.7；K型 58.8，氣球 84~494、
+    #      零件 0~16）
+    #   ② 1.5×尺寸內浮空點 ≤ CROWD_GATE（= 氣球 crowd 最大值；K型 氣球實測
+    #      [0×25, 1×10] → 1。剛好擋掉一顆 crowd=2 的存疑頭——它旁邊有同心
+    #      a=4.5 環、又貼 a=80 零件弧，更像零件特徵，使用者也沒回報它）
     #   ③ 引線不是編號氣球的引線（編號氣球指的一定是零件）
     axis_id = {id(L) for L in axis_lines}
 
@@ -340,6 +357,16 @@ def balloon_mode(doc, msp):
                     return True
         return False
 
+    # 自動標定②：浮空閘門 = 編號氣球 crowd 的「最大值」。
+    # 語意＝「氣球頭不能比最擁擠的真氣球更擁擠」。注意量測口徑必須和候選頭一致
+    # （都要過 family_of，它會排除自家同心圈與引線），否則不可比——K型 實測
+    # 氣球分佈 = [0×25, 1×10]，max = 1；剛好擋掉一顆 crowd=2 的存疑頭
+    # （有同心 a=4.5 環、又貼 a=80 零件弧，像零件特徵，使用者也沒回報它），
+    # 同時放行 S1 的 crowd=1 半圓頭。K型 標定結果 = 1（原本硬編碼 1，等價）。
+    _bc = [crowd(b["x"], b["y"], b["r"] * 1.5, family_of(b["x"], b["y"]))
+           for b in balloons]
+    CROWD_GATE = max(_bc) if _bc else 1
+
     head_ids, chain_ids = set(), set()
     for e in msp:
         if e.dxftype() not in ("ELLIPSE", "ARC"):
@@ -350,7 +377,7 @@ def balloon_mode(doc, msp):
         cx, cy = e.dxf.center.x, e.dxf.center.y
         if num_text_inside(cx, cy, sz):
             continue                      # 有數字 → 已走配對路徑
-        if d_axis(cx, cy) <= 60:
+        if d_axis(cx, cy) <= AXIS_GATE:
             continue                      # 閘門①：坐在組立軸線上 = 零件
         leads = [L for L in lines
                  if min(math.hypot(L.dxf.start.x - cx, L.dxf.start.y - cy),
@@ -362,7 +389,7 @@ def balloon_mode(doc, msp):
         if has_balloon_leader(leads):
             continue                      # 閘門③：編號氣球指向它 = 零件
         drop = family_of(cx, cy)
-        if crowd(cx, cy, sz * 1.5, drop) > 1:
+        if crowd(cx, cy, sz * 1.5, drop) > CROWD_GATE:
             continue                      # 閘門②：不浮空 = 零件
         head_ids.add(id(e))
         # 沿引線鏈延伸到碰到零件為止（S1 的折線引線共 2 段）
