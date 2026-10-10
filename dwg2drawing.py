@@ -3,7 +3,10 @@
 """DWG → EzBOM drawing.svg（2026-10-09 定版流程，見 Obsidian DWG轉EzBOM流程.md）
 
 用法:
-    python3 dwg2drawing.py <in.dwg> <out.svg> [bom.csv]
+    python3 dwg2drawing.py <in.dwg> <out.svg> [bom.csv] [--rotate auto|0|90|180|270]
+
+--rotate 預設 auto：直式（高>寬）自動順時針轉 90° 成橫式，與 p_type 參考稿
+（p_type.dxf.svg，8400×5940）方向一致；橫式不動。p_type 橫式故回歸輸出不變。
 
 模式自動選擇:
   1. layer   — 存在 ^P\\d+- 圖層：按圖層分組（標籤=圖層名，與手工版同源），
@@ -41,6 +44,24 @@ def esc(s):
 def flip(segs):
     """CAD y-up → SVG y-down。"""
     return [(x1, -y1, x2, -y2) for x1, y1, x2, y2 in segs]
+
+
+def flip_rot(segs, deg):
+    """CAD y-up → SVG y-down，再把畫面旋轉 deg 度（順時針）。
+
+    SVG 座標 y 向下，順時針 90° 的變換是 (x, y) → (-y, x)：
+    原本在左上角的內容會跑到右上角。K型 DWG 在 WCS 裡是直式
+    （viewBox 1863×2594），p_type 參考稿是橫式（8400×5940），
+    使用者 2026-10-10 裁定直式圖一律轉正成橫式。
+    """
+    out = flip(segs)
+    if deg == 90:
+        return [(-y1, x1, -y2, x2) for x1, y1, x2, y2 in out]
+    if deg == 180:
+        return [(-x1, -y1, -x2, -y2) for x1, y1, x2, y2 in out]
+    if deg == 270:
+        return [(y1, -x1, y2, -x2) for x1, y1, x2, y2 in out]
+    return out
 
 
 def read_bom_ids(path):
@@ -461,14 +482,25 @@ def balloon_mode(doc, msp):
                             "unassigned_dropped": len(unassigned)}
 
 
-def build(svg_path, groups, labels, bom_ids=()):
+def build(svg_path, groups, labels, bom_ids=(), rotate="auto"):
     all_segs = [s for v in groups.values() for s in v]
     if not all_segs:
         raise SystemExit("沒有可畫的線段")
     xs = [s[0] for s in all_segs] + [s[2] for s in all_segs]
     ys = [s[1] for s in all_segs] + [s[3] for s in all_segs]
     minx, miny, maxx, maxy = min(xs), min(ys), max(xs), max(ys)
-    w, h = (maxx - minx) or 1.0, (maxy - miny) or 1.0
+    w0, h0 = (maxx - minx) or 1.0, (maxy - miny) or 1.0
+
+    # 自動轉正：直式（高>寬）轉成橫式，與 p_type 參考稿方向一致。
+    # 橫式圖不動 → p_type 回歸輸出逐位元組不變。可 --rotate 0/90/180/270 覆寫。
+    deg = (90 if h0 > w0 else 0) if rotate == "auto" else int(rotate)
+    xf = {L: flip_rot(v, deg) for L, v in groups.items()}
+
+    tsegs = [s for v in xf.values() for s in v]
+    txs = [s[0] for s in tsegs] + [s[2] for s in tsegs]
+    tys = [s[1] for s in tsegs] + [s[3] for s in tsegs]
+    tminx, tminy = min(txs), min(tys)
+    w, h = (max(txs) - tminx) or 1.0, (max(tys) - tminy) or 1.0
     pad = max(w, h) * 0.02
     sw = math.hypot(w, h) * 0.002
 
@@ -477,8 +509,8 @@ def build(svg_path, groups, labels, bom_ids=()):
         return int(m.group(1)) if m else 9999
 
     parts = []
-    for L in sorted(groups, key=sort_key):
-        d = segs_to_svg_path(flip(groups[L]))
+    for L in sorted(xf, key=sort_key):
+        d = segs_to_svg_path(xf[L])
         if d:
             parts.append('<g inkscape:label="%s"><path d="%s" fill="none" '
                          'stroke="#141413" stroke-width="%.3f"/></g>'
@@ -487,13 +519,15 @@ def build(svg_path, groups, labels, bom_ids=()):
            '<svg xmlns="http://www.w3.org/2000/svg" version="1.1"\n'
            '     xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"\n'
            '     viewBox="%.2f %.2f %.2f %.2f">\n%s\n</svg>\n'
-           % (minx - pad, -(maxy + pad), w + 2 * pad, h + 2 * pad,
+           % (tminx - pad, tminy - pad, w + 2 * pad, h + 2 * pad,
               "\n".join(parts)))
     with open(svg_path, "w", encoding="utf-8") as fh:
         fh.write(svg)
 
     ids = {re.match(r"(P\d+)", labels[L]).group(1) for L in labels}
     print("產出:", svg_path)
+    print("旋轉: %s%s（原 %.0f×%.0f → %.0f×%.0f）"
+          % (deg, "°順時針" if deg else "（不轉）", w0, h0, w, h))
     print("零件群組 %d / 線段 %d" % (len(groups), len(all_segs)))
     if bom_ids:
         print("bom 交叉: 有圖無bom =", sorted(ids - bom_ids) or "無",
@@ -503,10 +537,18 @@ def build(svg_path, groups, labels, bom_ids=()):
 
 
 def main():
-    if len(sys.argv) < 3:
+    args = sys.argv[1:]
+    rotate = "auto"
+    if "--rotate" in args:
+        i = args.index("--rotate")
+        if i + 1 >= len(args):
+            raise SystemExit("--rotate 需要 0/90/180/270")
+        rotate = args[i + 1]
+        del args[i:i + 2]
+    if len(args) < 2:
         raise SystemExit(__doc__)
-    dwg, out = sys.argv[1], sys.argv[2]
-    bom = sys.argv[3] if len(sys.argv) > 3 else None
+    dwg, out = args[0], args[1]
+    bom = args[2] if len(args) > 2 else None
     doc = ezdxf.readfile(convert_dwg(dwg, "/tmp/dwgextract"))
     msp = doc.modelspace()
     has_player = any(LAYER_RE.match(e.dxf.layer) for e in msp
@@ -518,7 +560,7 @@ def main():
         print("模式: balloon（CIRCLE+TEXT 氣球歸組）")
         groups, labels, stats = balloon_mode(doc, msp)
     print("統計:", stats)
-    build(out, groups, labels, read_bom_ids(bom))
+    build(out, groups, labels, read_bom_ids(bom), rotate=rotate)
 
 
 if __name__ == "__main__":
