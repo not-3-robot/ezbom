@@ -85,6 +85,30 @@ def balloon_mode(doc, msp):
                                  "r": r})
                 paired.add(i)
                 break
+    # 氣球不一定畫成 CIRCLE：K型 氣球#16 畫成 ARC r=27、sweep=355°（數字 16 就在
+    # 圈內），配對只認 CIRCLE 所以漏配——流程筆記記的「文字16 無圈」其實是偵測缺口，
+    # 不是源圖缺口。r∈[24,30] 是照 34 顆編號氣球的 r=27 取的，sweep≥270 才算整圈
+    # （同半徑的零件弧 sweep 只有 13~24°，不會誤配）。
+    balloon_arc_ids = set()
+    for t in texts:
+        tx, ty = t.dxf.insert.x, t.dxf.insert.y
+        if any(math.hypot(tx - b["x"], ty - b["y"]) <= b["r"] for b in balloons):
+            continue
+        for a in msp.query("ARC"):
+            if id(a) in balloon_arc_ids:
+                continue
+            r = a.dxf.radius
+            if not 24 <= r <= 30:
+                continue
+            if (a.dxf.end_angle - a.dxf.start_angle) % 360 < 270:
+                continue
+            if math.hypot(tx - a.dxf.center.x, ty - a.dxf.center.y) <= r:
+                balloons.append({"n": int(t.dxf.text.strip()),
+                                 "x": a.dxf.center.x, "y": a.dxf.center.y,
+                                 "r": r})
+                balloon_arc_ids.add(id(a))
+                break
+
     if not balloons:
         raise SystemExit("無 P 圖層，也找不到 CIRCLE+數字 TEXT 配對——先在 CAD 分層再跑")
 
@@ -137,6 +161,33 @@ def balloon_mode(doc, msp):
                 layer_lt[L] = "CONTINUOUS"
         return layer_lt[L]
 
+    # ── 組立軸線 ────────────────────────────────────────────────────────────
+    # K型 層2 = ACAD_ISO12W100（ISO 虛線）＝零件中間的組立假想線。軸線的「端點
+    # 正好落在零件中心」，radial_leaders 的「一端貼 ≤1.35a、另一端 ≥2.5a」對它
+    # 永遠成立 → 坐在軸線上的軸承圈全被誤判成泡泡刪掉（2026-10-10 實測 13 顆
+    # 全是零件，另加重規則2 的部分弧共 30 顆）。
+    # 判別力（同一份圖量的）：
+    #   34 顆編號氣球 距軸線 84 ~ 494（中位 128）
+    #   13 顆被誤刪的軸承 距軸線 0 ~ 16
+    # 完全分離，故閘門取 60（留安全邊距）。
+    axis_lines = [L for L in lines if dash_re.search(linetype_of(L) or "")]
+
+    def d_axis(px, py):
+        best = 1e18
+        for L in axis_lines:
+            ax, ay = L.dxf.start.x, L.dxf.start.y
+            bx, by = L.dxf.end.x, L.dxf.end.y
+            dx, dy = bx - ax, by - ay
+            L2 = dx * dx + dy * dy
+            if L2 == 0:
+                d = math.hypot(px - ax, py - ay)
+            else:
+                t = max(0.0, min(1.0, ((px - ax) * dx + (py - ay) * dy) / L2))
+                d = math.hypot(px - (ax + t * dx), py - (ay + t * dy))
+            if d < best:
+                best = d
+        return best
+
     # 註記泡泡（無文字版）：完整等軸測圈 a∈[10,50] 若帶徑向引線
     # （一端貼圈 ≤1.35a、另端 ≥2.5a）＝沒有號碼的註記圈。
     # K型 實測：雙同心圈 a=27.8+35.0 + layer0 引線 78.6，即使用者指的泡泡球。
@@ -159,18 +210,181 @@ def balloon_mode(doc, msp):
         if abs((e.dxf.end_param - e.dxf.start_param) - 2 * math.pi) > 0.05:
             continue
         cx, cy = e.dxf.center.x, e.dxf.center.y
+        # 閘門：坐在組立軸線上的一定是零件（見上方 d_axis 說明）。
+        if d_axis(cx, cy) <= 60:
+            continue
         leads = radial_leaders(cx, cy, a)
         if not leads:
             continue
-        # 同心同尺度完整圈一併成組刪除
+        # 同心同尺度完整圈一併成組刪除（雙環結構）
         for f in msp.query("ELLIPSE"):
             b = f.dxf.major_axis.magnitude
-            if (10 <= b <= 50 and 0.45 <= f.dxf.ratio <= 0.75
-                    and abs((f.dxf.end_param - f.dxf.start_param) - 2 * math.pi) <= 0.05
-                    and math.hypot(f.dxf.center.x - cx, f.dxf.center.y - cy) < 5
-                    and abs(b - a) < 25):
+            if not (10 <= b <= 50 and 0.45 <= f.dxf.ratio <= 0.75):
+                continue
+            off = math.hypot(f.dxf.center.x - cx, f.dxf.center.y - cy)
+            full = abs((f.dxf.end_param - f.dxf.start_param) - 2 * math.pi) <= 0.05
+            if full and off < 5 and abs(b - a) < 25:
+                bubble_ids.add(id(f))
+            # 規則2：與泡泡同心的同尺寸「部分弧」＝泡泡畫圓時的殘影複本，
+            # 現行完整圈判定會漏掉。K型 實測 9 處 22 顆，紅綠疊圖確認全是
+            # 泡泡複本、非零件幾何（2026-10-10）。閾值照流程筆記：偏移<15、|Δa|<5。
+            elif (not full) and off < 15 and abs(b - a) < 5:
                 bubble_ids.add(id(f))
         leader_ids.update(id(L) for L in leads)
+
+    # ── 無編號氣球頭 + 它的引線鏈 ──────────────────────────────────────────
+    # 氣球不一定畫成「滿圓」：S1 是 a=10 sweep=180° 的半圓頭（外加一條
+    # 129.6 長的折引線），另有一顆 a=15.5 sweep=314° 的近圓頭。它們不含數字、
+    # 也不在軸線上，上面兩條規則都漏抓 → 頭和引線都留在圖上（使用者回報 S1）。
+    # 三道閘門，基準都是同一張圖的 34 顆編號氣球：
+    #   ① 距組立軸線 >60   （氣球 84~494；零件 0~16）
+    #   ② 1.5×尺寸內浮空點 ≤1（34 顆氣球實測 1~2；取 1 是刻意比基準嚴，
+    #      擋掉一顆 crowd=2 的存疑頭——它旁邊有同心 a=4.5 環、又貼著 a=80
+    #      的零件弧，更像零件特徵，而且使用者沒回報它，不動）
+    #   ③ 引線不是編號氣球的引線（編號氣球指的一定是零件）
+    axis_id = {id(L) for L in axis_lines}
+
+    def geom_size(e):
+        return e.dxf.major_axis.magnitude if e.dxftype() == "ELLIPSE" else e.dxf.radius
+
+    def geom_sweep(e):
+        if e.dxftype() == "ELLIPSE":
+            return math.degrees((e.dxf.end_param - e.dxf.start_param) % (2 * math.pi))
+        return (e.dxf.end_angle - e.dxf.start_angle) % 360
+
+    def pts_of(e, n=8):
+        t = e.dxftype()
+        if t == "ELLIPSE":
+            c, maj = e.dxf.center, e.dxf.major_axis
+            ar = maj.magnitude
+            br = ar * e.dxf.ratio
+            ang = math.atan2(maj.y, maj.x)
+            ca, sa = math.cos(ang), math.sin(ang)
+            t0, t1 = e.dxf.start_param, e.dxf.end_param
+            if t1 <= t0:
+                t1 += 2 * math.pi
+            out = []
+            for k in range(n + 1):
+                u = t0 + (t1 - t0) * k / n
+                x, y = ar * math.cos(u), br * math.sin(u)
+                out.append((c.x + ca * x - sa * y, c.y + sa * x + ca * y))
+            return out
+        if t in ("CIRCLE", "ARC"):
+            c, r = e.dxf.center, e.dxf.radius
+            if t == "CIRCLE":
+                t0, t1 = 0.0, 2 * math.pi
+            else:
+                t0 = math.radians(e.dxf.start_angle)
+                t1 = math.radians(e.dxf.end_angle)
+                if t1 <= t0:
+                    t1 += 2 * math.pi
+            return [(c.x + r * math.cos(t0 + (t1 - t0) * k / n),
+                     c.y + r * math.sin(t0 + (t1 - t0) * k / n)) for k in range(n + 1)]
+        if t == "LINE":
+            a, b = e.dxf.start, e.dxf.end
+            return [(a.x + (b.x - a.x) * k / 6, a.y + (b.y - a.y) * k / 6) for k in range(7)]
+        if t in ("LWPOLYLINE", "POLYLINE"):
+            out = []
+            try:
+                for v in e.virtual_entities():
+                    out.extend(pts_of(v, 6))
+            except Exception:
+                pass
+            return out
+        return []
+
+    def num_text_inside(x, y, r):
+        return any(math.hypot(t.dxf.insert.x - x, t.dxf.insert.y - y) <= r for t in texts)
+
+    def has_balloon_leader(ls):
+        for L in ls:
+            for b in balloons:
+                d1 = math.hypot(L.dxf.start.x - b["x"], L.dxf.start.y - b["y"])
+                d2 = math.hypot(L.dxf.end.x - b["x"], L.dxf.end.y - b["y"])
+                if min(d1, d2) <= b["r"] * 1.4:
+                    return True
+        return False
+
+    def family_of(cx, cy):
+        drop = set()
+        for e in msp:
+            if e.dxftype() in ("ELLIPSE", "CIRCLE", "ARC") and e.dxf.hasattr("center"):
+                if math.hypot(e.dxf.center.x - cx, e.dxf.center.y - cy) < 15:
+                    drop.add(id(e))
+        for L in lines:
+            d1 = math.hypot(L.dxf.start.x - cx, L.dxf.start.y - cy)
+            d2 = math.hypot(L.dxf.end.x - cx, L.dxf.end.y - cy)
+            if min(d1, d2) <= 70 and max(d1, d2) <= 200:
+                drop.add(id(L))
+        return drop
+
+    def crowd(cx, cy, R, drop):
+        n = 0
+        for e in msp:
+            if id(e) in drop:
+                continue
+            if id(e) in axis_id:
+                continue
+            for x, y in pts_of(e, 6):
+                if math.hypot(x - cx, y - cy) <= R:
+                    n += 1
+                    break
+        return n
+
+    def nonline_touch(px, py, exclude):
+        for e in msp:
+            if id(e) in exclude or e.dxftype() == "LINE":
+                continue
+            for x, y in pts_of(e, 8):
+                if math.hypot(x - px, y - py) <= 2.5:
+                    return True
+        return False
+
+    head_ids, chain_ids = set(), set()
+    for e in msp:
+        if e.dxftype() not in ("ELLIPSE", "ARC"):
+            continue
+        sz = geom_size(e)
+        if not 6 <= sz <= 50 or geom_sweep(e) < 150:
+            continue
+        cx, cy = e.dxf.center.x, e.dxf.center.y
+        if num_text_inside(cx, cy, sz):
+            continue                      # 有數字 → 已走配對路徑
+        if d_axis(cx, cy) <= 60:
+            continue                      # 閘門①：坐在組立軸線上 = 零件
+        leads = [L for L in lines
+                 if min(math.hypot(L.dxf.start.x - cx, L.dxf.start.y - cy),
+                        math.hypot(L.dxf.end.x - cx, L.dxf.end.y - cy)) <= sz * 1.5
+                 and max(math.hypot(L.dxf.start.x - cx, L.dxf.start.y - cy),
+                         math.hypot(L.dxf.end.x - cx, L.dxf.end.y - cy)) > sz * 2]
+        if not leads:
+            continue
+        if has_balloon_leader(leads):
+            continue                      # 閘門③：編號氣球指向它 = 零件
+        drop = family_of(cx, cy)
+        if crowd(cx, cy, sz * 1.5, drop) > 1:
+            continue                      # 閘門②：不浮空 = 零件
+        head_ids.add(id(e))
+        # 沿引線鏈延伸到碰到零件為止（S1 的折線引線共 2 段）
+        pending = list(leads)
+        guard = 0
+        while pending and guard < 40:
+            guard += 1
+            L = pending.pop()
+            if id(L) in chain_ids:
+                continue
+            chain_ids.add(id(L))
+            for p in (L.dxf.start, L.dxf.end):
+                if math.hypot(p.x - cx, p.y - cy) <= sz * 1.5:
+                    continue              # 這一端是頭
+                if nonline_touch(p.x, p.y, chain_ids | head_ids):
+                    continue              # 碰到零件 → 停
+                for M in lines:
+                    if id(M) in chain_ids:
+                        continue
+                    if min(math.hypot(M.dxf.start.x - p.x, M.dxf.start.y - p.y),
+                           math.hypot(M.dxf.end.x - p.x, M.dxf.end.y - p.y)) <= 2.5:
+                        pending.append(M)
 
     keep = []
     n_drop_c = n_drop_l = n_dash = n_bub = 0
@@ -186,6 +400,15 @@ def balloon_mode(doc, msp):
             continue
         if id(e) in bubble_ids:
             n_bub += 1
+            continue
+        if id(e) in balloon_arc_ids:
+            n_drop_c += 1
+            continue
+        if id(e) in head_ids:
+            n_bub += 1
+            continue
+        if id(e) in chain_ids:
+            n_drop_l += 1
             continue
         if is_leader(e):
             n_drop_l += 1
@@ -206,6 +429,7 @@ def balloon_mode(doc, msp):
     return groups, labels, {"dropped_circles": n_drop_c,
                             "dropped_leaders": n_drop_l,
                             "dropped_bubbles": n_bub,
+                            "dropped_heads": len(head_ids),
                             "dropped_dashed": n_dash,
                             "unassigned_dropped": len(unassigned)}
 
