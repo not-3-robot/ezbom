@@ -29,7 +29,8 @@ REPO = os.path.dirname(os.path.abspath(__file__))
 EXTRACT_DIR = "/Users/zone/Documents/Study/B0M研究/BOM樹狀圖/_build"
 sys.path.insert(0, EXTRACT_DIR)
 
-from dwg_extract import convert_dwg, collect_segments, assign_segments, ASSIGN_THRESHOLD
+from dwg_extract import (convert_dwg, collect_segments, assign_segments,
+                         ASSIGN_THRESHOLD, BALLOON_BLOCK)
 from dwg_merge import segs_to_svg_path
 import ezdxf
 
@@ -137,6 +138,44 @@ def balloon_mode(doc, msp):
                 balloon_arc_ids.add(id(a))
                 break
 
+    # ── 件號 block 氣球（誠岱 46 支可讀批次）────────────────────────────
+    # 誠岱手冊 DWG 的編號不是 TEXT+CIRCLE，而是「件號」block 的 ATTRIB 屬性
+    # （同 dwg_extract.extract_balloons 邏輯，2026-10-10 實測這批唯一的氣球
+    # 形式）。CIRCLE+TEXT/ARC 配對都落空才走這條——兩條路互斥，p_type/K型
+    # 的回歸輸出因此逐位元組不變。
+    block_mode = False
+    if not balloons:
+        for e in msp:
+            if e.dxftype() != "INSERT" or BALLOON_BLOCK not in e.dxf.name:
+                continue
+            n = None
+            for a in e.attribs:
+                txt = str(a.dxf.text).strip()
+                if txt.isdigit():
+                    n = int(txt)
+                    break
+            if n is None:
+                continue
+            # 半徑取 block 內部 CIRCLE 最大者（引線/閘門量測都要半徑）；
+            # 內部無圈退回 27（K型 編號圈實測半徑，只當尺度參考）。
+            r = 0.0
+            cx = cy = None
+            try:
+                for v in e.virtual_entities():
+                    if v.dxftype() == "CIRCLE" and v.dxf.radius > r:
+                        r = v.dxf.radius
+                        cx, cy = v.dxf.center.x, v.dxf.center.y
+            except Exception:
+                pass
+            # 真圈心：件號 block 的插入點落在圓周右緣（離圈心恰為 r），
+            # 引線量測必須用圈心——用 insert 會漏掉對側引線（超短小車實測
+            # 殘留 52/139）且誤殺貼 insert 的零件短線（8 支代表圖層0 誤殺 33）。
+            balloons.append({"n": n, "x": e.dxf.insert.x, "y": e.dxf.insert.y,
+                             "r": r or 27.0,
+                             "cx": cx if cx is not None else e.dxf.insert.x,
+                             "cy": cy if cy is not None else e.dxf.insert.y})
+        block_mode = bool(balloons)
+
     if not balloons:
         raise SystemExit("無 P 圖層，也找不到 CIRCLE+數字 TEXT 配對——先在 CAD 分層再跑")
 
@@ -150,6 +189,8 @@ def balloon_mode(doc, msp):
         return math.hypot(p.x - b["x"], p.y - b["y"])
 
     for i, c in enumerate(circles):
+        if block_mode:
+            break          # block 模式：頂層圈全是零件，孤圈規則會誤殺
         if i in paired:
             continue
         b = {"x": c.dxf.center.x, "y": c.dxf.center.y, "r": c.dxf.radius}
@@ -170,6 +211,23 @@ def balloon_mode(doc, msp):
         for p in (e.dxf.start, e.dxf.end):
             for b in balloons:
                 if math.hypot(p.x - b["x"], p.y - b["y"]) <= b["r"] * 1.3:
+                    return True
+        return False
+
+    # ── block 模式引線判別（2026-10-19）──────────────────────────────────
+    # 誠岱手冊批的氣球＝件號 block：引線是獨立 LINE，一端落在圓周上、他端
+    # 指向零件。4 支代表圖實測判別力完全分離：「一端 |d−圈心 r| ≤ 0.3r 且
+    # 他端 ≥ 2r」命中 131/139、30/30、84/84、85/82，100% 落在專屬引線圖層
+    # （層4/5），層0 零件線零命中。tol 0.15r↔0.30r 命中數完全相同＝閾值不敏感。
+    # 取代 insert 量測的舊 is_leader（量測基準錯，見上方真圈心註解）。
+    def edge_leader(e):
+        if e.dxftype() != "LINE":
+            return False
+        for p, q in ((e.dxf.start, e.dxf.end), (e.dxf.end, e.dxf.start)):
+            for b in balloons:
+                if abs(math.hypot(p.x - b["cx"], p.y - b["cy"]) - b["r"]) \
+                        <= b["r"] * 0.3 \
+                        and math.hypot(q.x - b["cx"], q.y - b["cy"]) >= b["r"] * 2.0:
                     return True
         return False
 
@@ -229,6 +287,9 @@ def balloon_mode(doc, msp):
     #   ② 編號氣球的引線（氣球指的一定是零件）→ 下方 has_balloon_leader 擋
     # K型 修前因此誤刪 13 顆軸承（雙同心圈 a=27.8+35.0 當時被誤記成「使用者指的
     # 泡泡球」，實測那些全是零件）；加閘門後 13 → 0。
+    # ⚠️ block 模式（手冊批）整組停用：這批圖的等軸測橢圓（ratio 0.58≈cos54.7°）
+    # 全是零件面——超短小車實測「滿圈註記泡泡」判定 chain 吃掉相鄰 a=13.5 半橢圓
+    # （鏈條鏈環），正是使用者 2026-10-19 點名的「零件輪廓線不能刪」。
     def radial_leaders(cx, cy, rr):
         out = []
         for L in lines:
@@ -239,7 +300,7 @@ def balloon_mode(doc, msp):
         return out
 
     bubble_ids, leader_ids = set(), set()
-    for e in msp.query("ELLIPSE"):
+    for e in ([] if block_mode else msp.query("ELLIPSE")):
         a = e.dxf.major_axis.magnitude
         if not (10 <= a <= 50 and 0.45 <= e.dxf.ratio <= 0.75):
             continue
@@ -384,12 +445,13 @@ def balloon_mode(doc, msp):
     # 氣球分佈 = [0×25, 1×10]，max = 1；剛好擋掉一顆 crowd=2 的存疑頭
     # （有同心 a=4.5 環、又貼 a=80 零件弧，像零件特徵，使用者也沒回報它），
     # 同時放行 S1 的 crowd=1 半圓頭。K型 標定結果 = 1（原本硬編碼 1，等價）。
-    _bc = [crowd(b["x"], b["y"], b["r"] * 1.5, family_of(b["x"], b["y"]))
-           for b in balloons]
+    _bc = ([] if block_mode else          # block 模式頭規則已停用，省掉 O(n²) 標定
+           [crowd(b["x"], b["y"], b["r"] * 1.5, family_of(b["x"], b["y"]))
+            for b in balloons])
     CROWD_GATE = max(_bc) if _bc else 1
 
     head_ids, chain_ids = set(), set()
-    for e in msp:
+    for e in (msp if not block_mode else []):
         if e.dxftype() not in ("ELLIPSE", "ARC"):
             continue
         sz = geom_size(e)
@@ -435,6 +497,7 @@ def balloon_mode(doc, msp):
                         pending.append(M)
 
     keep = []
+    dropped_lids = set()          # 被當引線/假想線丟掉的 LINE id（診斷用）
     n_drop_c = n_drop_l = n_dash = n_bub = 0
     for e in msp:
         t = e.dxftype()
@@ -445,6 +508,7 @@ def balloon_mode(doc, msp):
                 continue
         if id(e) in leader_ids:
             n_drop_l += 1
+            dropped_lids.add(id(e))
             continue
         if id(e) in bubble_ids:
             n_bub += 1
@@ -457,12 +521,15 @@ def balloon_mode(doc, msp):
             continue
         if id(e) in chain_ids:
             n_drop_l += 1
+            dropped_lids.add(id(e))
             continue
-        if is_leader(e):
+        if edge_leader(e) if block_mode else is_leader(e):
             n_drop_l += 1
+            dropped_lids.add(id(e))
             continue
         if dash_re.search(linetype_of(e) or ""):
             n_dash += 1
+            dropped_lids.add(id(e))
             continue
         keep.append(e)
 
@@ -474,6 +541,13 @@ def balloon_mode(doc, msp):
             key = "P%02d" % int(n)
             groups[key] = ss
             labels[key] = "%s-part" % key
+    # 診斷轉儲：給「泡泡線逐張檢查」用（唯讀，不影響輸出）
+    globals()["LAST_DEBUG"] = {
+        "keep": keep, "dropped_lids": dropped_lids,
+        "bubble_ids": bubble_ids, "head_ids": head_ids,
+        "chain_ids": chain_ids, "extra_circles": extra_circles,
+        "extra_leaders": extra_leaders, "balloons": balloons,
+    }
     return groups, labels, {"dropped_circles": n_drop_c,
                             "dropped_leaders": n_drop_l,
                             "dropped_bubbles": n_bub,
