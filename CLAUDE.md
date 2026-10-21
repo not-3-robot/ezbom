@@ -9,7 +9,7 @@
 ## 怎麼跑 / 怎麼部署
 
 ```bash
-cd "/Users/zone/Documents/Sales/樣本＆使用手冊/冠亞/公司＆產品簡介/EzBOM"
+cd "/Users/zone/Documents/Sales/樣本＆使用手冊/冠亞/EzBOM"
 
 # 本地預覽
 python3 -m http.server 9001   # 開 http://localhost:9001

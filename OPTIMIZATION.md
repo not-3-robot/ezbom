@@ -127,10 +127,10 @@ var ADMIN_PASSWORD_HASH = '';  // 永遠空字串
 **位置**：`CLAUDE.md:12`
 
 ```bash
-cd "/Users/zone/Documents/Sales/樣本＆使用手冊/冠亞/公司＆產品簡介/EzBOM"  # ← 現行路徑
+cd "/Users/zone/Documents/Sales/樣本＆使用手冊/冠亞/EzBOM"  # ← 現行路徑
 ```
 
-實際路徑為 `/Users/zone/Documents/Sales/樣本＆使用手冊/冠亞/公司＆產品簡介/EzBOM`
+實際路徑為 `/Users/zone/Documents/Sales/樣本＆使用手冊/冠亞/EzBOM`
 
 **修復方向**：更新路徑。
 
