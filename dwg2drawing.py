@@ -42,6 +42,10 @@ import ezdxf
 
 LAYER_RE = re.compile(r"^P(\d+)-")
 NUM_RE = re.compile(r"^\d+$")
+# P-id 契約（權威定義在 _audit/audit_drawing.py 的 LBL，兩端必須同語義）：
+#   ^P(\d+)(?:$|-)  — "P01"（無 dash）與 "P01-xxx"（有 dash）都算同一零件 P01。
+# JS 端對應：viewer.js 的 /^P\d+$/（無 dash 分支）＋ indexOf('-') 截斷（有 dash）。
+PID_RE = re.compile(r"^P(\d+)(?:$|-)")
 
 
 def esc(s):
@@ -632,7 +636,7 @@ def assign_components(segs, balloons, tips):
          吸附進來，先近後遠，一個分量只歸一件
       4. 仍無主的分量：最近 tip ≤ 對角線 3%，且 d1 < 0.6·d2（明顯較近）
          才收；否則畫成無標籤的「未歸組」群（不再整段丟線）
-      5. 外圖框（≤8 段、覆蓋 ≥90% 全幅）直接刪除；視圖框保留
+      5. 外圖框（≤12 段、框大於全幅 1/4、框內含 ≥80% 線段）直接刪除；視圖框保留
     """
     if not segs:
         return {}, {}, 0
@@ -926,7 +930,7 @@ def build(svg_path, groups, labels, bom_ids=(), rotate="auto", override_ops=None
     sw = math.hypot(w, h) * 0.002
 
     def sort_key(L):
-        m = LAYER_RE.match(L) or re.match(r"P(\d+)", L)
+        m = PID_RE.match(L)
         return int(m.group(1)) if m else 9999
 
     parts = []

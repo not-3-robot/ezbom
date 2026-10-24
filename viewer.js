@@ -804,11 +804,11 @@
         for (var i = 0; i < group.attributes.length; i++) {
           var attr = group.attributes[i];
           if (attr.name === 'inkscape:label' && attr.value) {
+            // P-id 契約（同 dwg2drawing.PID_RE / audit LBL）：
+            // "P01-xxx" 取 dash 前段；"P01"（無 dash）整值即零件 ID
             var dash = attr.value.indexOf('-');
-            if (dash > 0) {
-              var cand = attr.value.substring(0, dash);
-              if (cand.indexOf('P') === 0) { partId = cand; break; }
-            }
+            var cand = dash > 0 ? attr.value.substring(0, dash) : attr.value;
+            if (/^P\d+$/.test(cand)) { partId = cand; break; }
           }
         }
         if (!partId) return;
