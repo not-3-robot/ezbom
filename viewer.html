@@ -39,7 +39,7 @@
         </div>
 
         <!-- BOM 面板 -->
-        <div class="bom-panel" id="bom-panel">
+        <div class="bom-panel active" id="bom-panel">
             <!-- 統計 -->
             <div>
                 <h2>詢價統計</h2>
@@ -116,13 +116,10 @@
 
     <!-- 手機底部 Tab -->
     <div class="mobile-tabs" id="mobile-tabs">
-        <button class="active" onclick="switchTab('svg')">
-            <span class="tab-icon">🔍</span> 爆炸圖
+        <button class="active" data-tab="main" onclick="switchTab('main')">
+            <span class="tab-icon">🔧</span> 圖面＋清單
         </button>
-        <button onclick="switchTab('bom')">
-            <span class="tab-icon">📋</span> 零件清單
-        </button>
-        <button onclick="switchTab('stats')" id="stats-tab-btn">
+        <button data-tab="stats" onclick="switchTab('stats')" id="stats-tab-btn">
             <span class="tab-icon" id="stats-tab-icon">🔒</span> 採購統計
         </button>
     </div>

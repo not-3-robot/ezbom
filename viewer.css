@@ -281,7 +281,7 @@ body {
     }
     .svg-panel {
         border-right: none; border-bottom: none;
-        min-height: calc(100vh - 105px); padding: 0;
+        height: 45vh; min-height: 280px; padding: 0;
         display: flex;
     }
     .svg-container {
@@ -330,7 +330,7 @@ body {
 
 /* ===== 小手機 (<= 480px) ===== */
 @media (max-width: 480px) {
-    .svg-panel { min-height: calc(100vh - 100px); }
+    .svg-panel { height: 42vh; min-height: 260px; }
     .bom-panel { padding: 8px; }
     .bom-item { padding: 8px 10px; }
 }
@@ -338,7 +338,7 @@ body {
 /* ===== 手機橫屏 ===== */
 @media (max-width: 900px) and (orientation: landscape) {
     .svg-panel {
-        min-height: calc(100vh - 50px);
+        height: 55vh;
         padding: 4px;
     }
     .svg-container svg {

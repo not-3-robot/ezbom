@@ -28,7 +28,7 @@
   var selectedParts = new Map();
   var partLabels = new Map();
   var bomInitialized = false;
-  var currentTab = 'svg';
+  var currentTab = 'main';
   var productConfig = null;
 
   // 撤銷歷史
@@ -104,8 +104,8 @@
     if (overlay) overlay.style.display = 'none';
     if (errEl) errEl.style.display = 'none';
     if (input) input.value = '';
-    if (currentTab === 'svg') switchTab('svg');
-    else switchTab('bom');
+    if (currentTab === 'stats') switchTab('stats');
+    else switchTab('main');
   };
 
   // ========================================================================
@@ -539,6 +539,14 @@
     }
     updateStats();
     saveSelection();
+
+    // 新選零件：捲到對應 BOM 項目（等 updateStats 重建 DOM 後再捲，動畫才不會被取消）
+    if (!wasSelected) {
+      setTimeout(function() {
+        var el = document.querySelector('#bom-list [data-part-id="' + partId + '"]');
+        if (el) el.scrollIntoView({ block: 'nearest' });
+      }, 50);
+    }
   }
 
   function updateBOMSelection(partId, selected) {
@@ -953,6 +961,7 @@
   // 11. 手機 Tab 切換
   // ========================================================================
   window.switchTab = function(tab) {
+    if (tab === 'svg' || tab === 'bom') tab = 'main';  // 舊 tab 名相容
     if (tab === 'stats' && !_isAdmin()) {
       var overlay = document.getElementById('pw-overlay');
       if (overlay) overlay.style.display = 'flex';
@@ -968,18 +977,16 @@
     }
 
     document.querySelectorAll('.mobile-tabs button').forEach(function(b) {
-      var txt = b.textContent;
-      if (tab === 'svg') b.classList.toggle('active', txt.indexOf('爆炸') !== -1);
-      else if (tab === 'bom') b.classList.toggle('active', txt.indexOf('零件') !== -1);
-      else b.classList.toggle('active', txt.indexOf('採購') !== -1);
+      b.classList.toggle('active', b.getAttribute('data-tab') === tab);
     });
 
     var svgPanel = document.getElementById('svg-panel');
     var bomPanel = document.getElementById('bom-panel');
     var statsPanel = document.getElementById('stats-panel');
 
-    if (svgPanel) svgPanel.style.display = tab === 'svg' ? 'flex' : 'none';
-    if (bomPanel) bomPanel.classList.toggle('active', tab === 'bom' || tab === 'stats');
+    // main：爆炸圖與 BOM 清單同頁堆疊（手機）；stats：統計內容
+    if (svgPanel) svgPanel.style.display = tab === 'stats' ? 'none' : 'flex';
+    if (bomPanel) bomPanel.classList.toggle('active', true);
     if (statsPanel) statsPanel.style.display = tab === 'stats' ? 'block' : 'none';
 
     if (tab === 'stats' && !window._statsLoaded) {
@@ -1102,7 +1109,7 @@
       }
 
       // / = 聚焦搜尋框
-      if (e.key === '/' && currentTab === 'bom') {
+      if (e.key === '/' && currentTab === 'main') {
         e.preventDefault();
         var searchBox = document.getElementById('search-box');
         if (searchBox) searchBox.focus();
