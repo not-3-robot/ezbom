@@ -4,7 +4,10 @@
 
 用法:
     python3 dwg2drawing.py <in.dwg> <out.svg> [bom.csv] [--rotate auto|0|90|180|270]
-                          [--overrides overrides.json --key 相對路徑]
+                          [--overrides overrides.json --key 相對路徑] [--stroke 數值]
+
+--stroke 覆寫筆畫寬（預設＝外框對角線×0.002）。細齒圖（齒輪/軸承齒距小於
+預設筆畫）會糊成實心黑塊，改細筆畫還原齒牙，如 鏈條/160/齒輪箱 用 0.15。
 
 --rotate 預設 auto：直式（高>寬）自動順時針轉 90° 成橫式，與 p_type 參考稿
 （p_type.dxf.svg，8400×5940）方向一致；橫式不動。p_type 橫式故回歸輸出不變。
@@ -1027,7 +1030,8 @@ def apply_overrides(xf, labels, ops, key=""):
     return applied
 
 
-def build(svg_path, groups, labels, bom_ids=(), rotate="auto", override_ops=None):
+def build(svg_path, groups, labels, bom_ids=(), rotate="auto", override_ops=None,
+          stroke=None):
     all_segs = [s for v in groups.values() for s in v]
     if not all_segs:
         raise SystemExit("沒有可畫的線段")
@@ -1052,7 +1056,8 @@ def build(svg_path, groups, labels, bom_ids=(), rotate="auto", override_ops=None
     tminx, tminy = min(txs), min(tys)
     w, h = (max(txs) - tminx) or 1.0, (max(tys) - tminy) or 1.0
     pad = max(w, h) * 0.02
-    sw = math.hypot(w, h) * 0.002
+    # 細齒圖（齒輪/軸承齒距 < 預設筆畫）會糊成實心黑塊，--stroke 可覆寫成細筆畫
+    sw = float(stroke) if stroke is not None else math.hypot(w, h) * 0.002
 
     def sort_key(L):
         m = PID_RE.match(L)
@@ -1092,6 +1097,13 @@ def main():
     args = sys.argv[1:]
     rotate = "auto"
     ov_path = key = None
+    stroke = None
+    if "--stroke" in args:
+        i = args.index("--stroke")
+        if i + 1 >= len(args):
+            raise SystemExit("--stroke 需要數值（如 0.15）")
+        stroke = args[i + 1]
+        del args[i:i + 2]
     if "--rotate" in args:
         i = args.index("--rotate")
         if i + 1 >= len(args):
@@ -1146,7 +1158,7 @@ def main():
             labels[k] = "%s-%s" % (k, names[k])
     print("統計:", stats)
     build(out, groups, labels, read_bom_ids(bom), rotate=rotate,
-          override_ops=override_ops)
+          override_ops=override_ops, stroke=stroke)
 
 
 if __name__ == "__main__":
