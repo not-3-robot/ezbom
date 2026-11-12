@@ -299,6 +299,8 @@ body {
     }
     .bom-panel.active { display: flex; }
     .bom-list-container { max-height: none; }
+    /* 選取自動捲動時避开固定底部 Tab 列與頂欄 */
+    .bom-item { scroll-margin-bottom: 70px; scroll-margin-top: 60px; }
 
     /* 底部 Tab */
     .mobile-tabs {
