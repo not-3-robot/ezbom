@@ -1047,12 +1047,14 @@
     if (!vals.length) return;
     vals.sort(function(a, b){ return a - b; });
     var baked = vals[Math.floor(vals.length / 2)];
-    var s = vClamp(+(baked * vBaseScale).toFixed(2), 0.25, 2.0);
+    // 下限 0.45px：低於此在手機上淡到看不見（實測 0.25px 整張幾乎消失）；
+    // 上限 2.0px 避免粗線把密集區黏成黑塊。
+    var s = vClamp(+(baked * vBaseScale).toFixed(2), 0.45, 2.0);
     // 再用「筆畫／線段長度比」夾上限：baked 值是為某個顯示尺度調的，
-    // 換到手機寬度可能過粗（ch190-motorbody 實測 9.88 倍會糊）。
+    // 換到手機寬度可能過粗。夾完仍不得低于可見下限。
     var seg = vSegRefPx();
     if (seg && seg > 1e-4) s = Math.min(s, +(seg * 3.2).toFixed(2));
-    view.stroke = vClamp(s, 0.25, 2.0);
+    view.stroke = vClamp(s, 0.45, 2.0);
   }
 
   // 取樣估線段長度（螢幕 px）。用 p60 而非中位數：平滑曲線細分會把
