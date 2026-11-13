@@ -220,15 +220,24 @@
   }
 
   function svgPointToContainer(svgEl, containerEl, svgX, svgY) {
-    var svgRect = svgEl.getBoundingClientRect();
     var containerRect = containerEl.getBoundingClientRect();
-    var viewBox = svgEl.viewBox.baseVal;
-    if (!viewBox || !viewBox.width || !viewBox.height) {
-      return { left: svgX, top: svgY };
-    }
+    // getScreenCTM 涵蓋 viewBox 偏移＋CSS scale/rotate/translate，
+    // 舊版自算比例在旋轉後會把標籤放錯位置（也忽略了 viewBox.x/y）。
+    try {
+      var m = svgEl.getScreenCTM();
+      if (m && svgEl.createSVGPoint) {
+        var pt = svgEl.createSVGPoint();
+        pt.x = svgX; pt.y = svgY;
+        var sp = pt.matrixTransform(m);
+        return { left: sp.x - containerRect.left, top: sp.y - containerRect.top };
+      }
+    } catch (e) { /* 降級 */ }
+    var svgRect = svgEl.getBoundingClientRect();
+    var vb = svgEl.viewBox.baseVal;
+    if (!vb || !vb.width || !vb.height) return { left: svgX, top: svgY };
     return {
-      left: svgX * (svgRect.width / viewBox.width) + (svgRect.left - containerRect.left),
-      top: svgY * (svgRect.height / viewBox.height) + (svgRect.top - containerRect.top)
+      left: (svgX - vb.x) * (svgRect.width / vb.width) + (svgRect.left - containerRect.left),
+      top: (svgY - vb.y) * (svgRect.height / vb.height) + (svgRect.top - containerRect.top)
     };
   }
 
@@ -842,6 +851,8 @@
 
     // 點擊（滑鼠與觸控共用）
     svg.addEventListener('click', function(ev) {
+      // 剛拖曳／pinch 過就不当成點選，避免平移後誤選零件
+      if (container.__ezSuppressClick) return;
       var g = resolveAt(ev.clientX, ev.clientY);
       if (!g) return;
       var partId = g.getAttribute('data-part-id');
@@ -903,16 +914,16 @@
     if (!isMobile) svg.style.maxHeight = '100%';
     svg.style.preserveAspectRatio = isMobile ? 'xMinYMin meet' : 'xMidYMid meet';
 
-    // 加入縮放控制按鈕（桌面版）
-    if (!isMobile) {
-      addZoomControls(container, svg);
-    }
+    // 視圖控制（縮放／旋轉／線寬／顯示／輸出）——桌面與手機都給
+    addViewControls(container, svg);
 
     requestAnimationFrame(function() {
       // 統一路徑樣式
       svg.querySelectorAll('path, circle, rect, ellipse, line').forEach(function(path) {
         path.style.stroke = '#141413';
-        path.style.strokeWidth = '2px';
+        // 線寬交給 CSS var(--ez-stroke) 單一來源（見 vApplyStroke），
+        // 不在此寫死 inline，避免與視圖控制互相覆寫。
+        path.style.strokeWidth = '';
         path.style.fill = 'none';
         // fill:none + 預設 pointer-events(visiblePainted) → 只有 2px 描邊可點，
         // 零件內部點下去命中的是 <svg> 背景（實測 elementFromPoint 中心=svg）。
@@ -979,61 +990,452 @@
       var labelTimer;
       window._ezbomResizeHandler = function() {
         clearTimeout(labelTimer);
-        labelTimer = setTimeout(function() { updateLabels(svg, container); }, 200);
+        labelTimer = setTimeout(function() {
+          if (vSvg === svg) { vMeasureBase(); vApplyStroke(); }
+          updateLabels(svg, container);
+        }, 200);
       };
       window.addEventListener('resize', window._ezbomResizeHandler);
     });
   }
 
-  function addZoomControls(container, svg) {
-    var controls = document.createElement('div');
-    controls.className = 'svg-zoom-controls';
+  // ========================================================================
+  // 10b. 視圖控制：縮放／旋轉／平移／線寬／顯示／輸出
+  // 常駐控制區，桌面右側 dock、手機圖面下方橫向滑軌，兩者同一套狀態。
+  // ========================================================================
+  var view = { zoom:1, rot:0, panX:0, panY:0, stroke:1.6, labels:true, isolate:false, grid:false };
+  var vSvg = null, vBox = null, vUI = {}, vBaseW = 0, vBaseH = 0, vBaseScale = 0, vRaf = 0;
 
-    var zoomInBtn = document.createElement('button');
-    zoomInBtn.textContent = '+';
-    zoomInBtn.title = '放大';
-    zoomInBtn.addEventListener('click', function() { zoomSVG(svg, svgZoomStep); });
-
-    var zoomOutBtn = document.createElement('button');
-    zoomOutBtn.textContent = '−';
-    zoomOutBtn.title = '縮小';
-    zoomOutBtn.addEventListener('click', function() { zoomSVG(svg, -svgZoomStep); });
-
-    var zoomResetBtn = document.createElement('button');
-    zoomResetBtn.textContent = '↺';
-    zoomResetBtn.title = '重置';
-    zoomResetBtn.addEventListener('click', function() { resetSVGZoom(svg); });
-
-    controls.appendChild(zoomInBtn);
-    controls.appendChild(zoomOutBtn);
-    controls.appendChild(zoomResetBtn);
-    container.appendChild(controls);
-
-    // 滑鼠滾輪縮放
-    container.addEventListener('wheel', function(e) {
-      if (e.ctrlKey || e.metaKey) {
-        e.preventDefault();
-        var delta = e.deltaY > 0 ? -svgZoomStep : svgZoomStep;
-        zoomSVG(svg, delta);
+  function vClamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+  function vKey() {
+    return 'ezbom_view_' + (new URLSearchParams(location.search).get('product') || 'default');
+  }
+  function vLoad() {
+    try {
+      var s = JSON.parse(localStorage.getItem(vKey()) || 'null');
+      if (s) {
+        ['zoom','rot','panX','panY','stroke'].forEach(function(k){
+          if (typeof s[k] === 'number' && isFinite(s[k])) view[k] = s[k];
+        });
+        ['labels','isolate','grid'].forEach(function(k){
+          if (typeof s[k] === 'boolean') view[k] = s[k];
+        });
       }
-    }, { passive: false });
+    } catch (e) {}
+    view.zoom = vClamp(view.zoom, svgZoomMin, svgZoomMax);
+    view.rot = ((Math.round(view.rot) % 360) + 360) % 360;
+    view.stroke = vClamp(view.stroke, 0.2, 6);
+  }
+  function vSave() {
+    try { localStorage.setItem(vKey(), JSON.stringify(view)); } catch (e) {}
   }
 
-  function zoomSVG(svg, delta) {
-    svgZoomLevel = Math.max(svgZoomMin, Math.min(svgZoomMax, svgZoomLevel + delta));
-    applyZoom(svg);
+  // 線寬以「螢幕像素」為單位：各圖 viewBox 尺度差很大（p-type 8400 vs
+  // 齒輪箱 2000），同樣的 user-unit 筆畫在不同圖粗細差 4 倍。換算成
+  // px × user-units-per-px，滑桿意義才一致。
+  // 基准比例（zoom=1、rot=0 時的 螢幕px／使用者單位）。
+  // 必須在「無 transform」狀態下量：transform 有 transition，設完立刻讀
+  // getScreenCTM 會拿到動畫中或舊的矩陣，線寬就會跟著縮放旋轉一起漂。
+  // CSS transform 不影響版面尺寸，所以只需 init 與 resize 各量一次。
+  function vMeasureBase() {
+    if (!vSvg) return;
+    var pt = vSvg.style.transform, pr = vSvg.style.transition;
+    vSvg.style.transition = 'none';
+    vSvg.style.transform = 'none';
+    try {
+      var m = vSvg.getScreenCTM();
+      if (m) {
+        var s = Math.hypot(m.a, m.b);
+        if (s > 1e-6) vBaseScale = s;
+      }
+      var br = vSvg.getBoundingClientRect();
+      vBaseW = br.width || vBaseW; vBaseH = br.height || vBaseH;
+    } catch (e) {}
+    vSvg.style.transform = pt;
+    vSvg.style.transition = pr;
+    void vSvg.getBoundingClientRect();
   }
 
-  function resetSVGZoom(svg) {
-    svgZoomLevel = 1;
-    applyZoom(svg);
+  function vUnitsPerPx() {
+    if (vBaseScale > 1e-6) return 1 / vBaseScale;
+    var vb = vSvg && vSvg.viewBox.baseVal;
+    return (vb && vb.width && vBaseW) ? vb.width / vBaseW : 1;
   }
 
-  function applyZoom(svg) {
-    svg.style.transform = 'scale(' + svgZoomLevel + ')';
-    svg.style.transformOrigin = 'center center';
-    svg.style.transition = 'transform 0.15s ease';
+  function vApplyStroke() {
+    if (!vSvg) return;
+    var w = (view.stroke * vUnitsPerPx()).toFixed(4);
+    vSvg.style.setProperty('--ez-stroke', w);
   }
+
+  function vApply(animate) {
+    if (!vSvg) return;
+    vSvg.style.transformOrigin = 'center center';
+    vSvg.style.transition = animate ? 'transform 0.18s cubic-bezier(.3,.8,.3,1)' : 'none';
+    vSvg.style.transform = 'translate(' + view.panX.toFixed(1) + 'px,' + view.panY.toFixed(1) + 'px) '
+                         + 'scale(' + view.zoom.toFixed(3) + ') rotate(' + view.rot + 'deg)';
+    vApplyStroke();
+    vBox.classList.toggle('ez-grid', !!view.grid);
+    vBox.classList.toggle('ez-isolate', !!view.isolate);
+    vBox.classList.toggle('ez-nolabels', !view.labels);
+    vBox.classList.toggle('ez-moved', view.zoom > 1.02 || view.panX !== 0 || view.panY !== 0);
+    vSync();
+    if (vRaf) cancelAnimationFrame(vRaf);
+    vRaf = requestAnimationFrame(function(){
+      vRaf = 0;
+      // dock 插入後容器寬度會變，等版面穩定再重算線寬與標籤座標
+      vApplyStroke();
+      updateLabels(vSvg, vBox);
+    });
+    vSave();
+  }
+
+  function vSync() {
+    if (vUI.zoom) { vUI.zoom.value = String(view.zoom); }
+    if (vUI.zoomOut) vUI.zoomOut.textContent = Math.round(view.zoom * 100) + '%';
+    if (vUI.rot) vUI.rot.value = String(view.rot);
+    if (vUI.rotOut) vUI.rotOut.textContent = view.rot + '°';
+    if (vUI.stroke) vUI.stroke.value = String(view.stroke);
+    if (vUI.strokeOut) vUI.strokeOut.textContent = view.stroke.toFixed(1) + 'px';
+    ['labels','isolate','grid'].forEach(function(k){
+      if (vUI[k]) vUI[k].setAttribute('aria-pressed', view[k] ? 'true' : 'false');
+    });
+  }
+
+  function vZoom(d) { view.zoom = vClamp(view.zoom + d, svgZoomMin, svgZoomMax); vApply(true); }
+  function vRotate(d) {
+    view.rot = ((Math.round(view.rot + d) % 360) + 360) % 360;
+    vApply(true);
+  }
+  function vReset() {
+    view.zoom = 1; view.rot = 0; view.panX = 0; view.panY = 0;
+    vApply(true);
+    showToast('視圖已重置');
+  }
+  // 貼合：把「旋轉後」的外框縮到剛好塞進容器（橫式轉直式時最需要）
+  function vFit() {
+    if (!vSvg || !vBaseW) return;
+    var r = view.rot * Math.PI / 180;
+    var rw = Math.abs(vBaseW * Math.cos(r)) + Math.abs(vBaseH * Math.sin(r));
+    var rh = Math.abs(vBaseW * Math.sin(r)) + Math.abs(vBaseH * Math.cos(r));
+    var cw = vBox.clientWidth, ch = vBox.clientHeight;
+    if (!rw || !rh || !cw || !ch) return;
+    view.zoom = vClamp(Math.min(cw / rw, ch / rh) * 0.96, svgZoomMin, svgZoomMax);
+    view.panX = 0; view.panY = 0;
+    vApply(true);
+    showToast('已貼合視窗 ' + Math.round(view.zoom * 100) + '%');
+  }
+
+  function vDownload(name, blob) {
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+  }
+
+  // 匯出：把目前線寬與旋轉烘進檔案（旋转用包覆 g + 重算 viewBox）
+  function vExportSVG() {
+    var NS = 'http://www.w3.org/2000/svg';
+    var clone = vSvg.cloneNode(true);
+    clone.removeAttribute('style'); clone.removeAttribute('class');
+    var vb = vSvg.viewBox.baseVal;
+    var w = vb.width, h = vb.height;
+    var r = view.rot * Math.PI / 180;
+    var cw = Math.abs(w * Math.cos(r)) + Math.abs(h * Math.sin(r));
+    var ch = Math.abs(w * Math.sin(r)) + Math.abs(h * Math.cos(r));
+    var cx = vb.x + w / 2, cy = vb.y + h / 2;
+    var wrap = document.createElementNS(NS, 'g');
+    while (clone.firstChild) wrap.appendChild(clone.firstChild);
+    wrap.setAttribute('transform', 'translate(' + (cw / 2 - cx).toFixed(2) + ','
+      + (ch / 2 - cy).toFixed(2) + ') rotate(' + view.rot + ' ' + cx.toFixed(2) + ' ' + cy.toFixed(2) + ')');
+    var bg = document.createElementNS(NS, 'rect');
+    bg.setAttribute('x','0'); bg.setAttribute('y','0');
+    bg.setAttribute('width', String(cw)); bg.setAttribute('height', String(ch));
+    bg.setAttribute('fill','#FFFFFF');
+    clone.appendChild(bg); clone.appendChild(wrap);
+    clone.setAttribute('viewBox', '0 0 ' + cw.toFixed(2) + ' ' + ch.toFixed(2));
+    clone.setAttribute('width', String(Math.round(cw)));
+    clone.setAttribute('height', String(Math.round(ch)));
+    var sw = (view.stroke * vUnitsPerPx()).toFixed(3);
+    var shapes = clone.querySelectorAll('path,circle,rect,ellipse,line,polyline,polygon');
+    for (var i = 0; i < shapes.length; i++) {
+      var s = shapes[i];
+      s.removeAttribute('style'); s.removeAttribute('class');
+      s.setAttribute('stroke', '#141413');
+      s.setAttribute('stroke-width', sw);
+      s.setAttribute('fill', 'none');
+    }
+    var gs = clone.querySelectorAll('g');
+    for (var j = 0; j < gs.length; j++) gs[j].removeAttribute('class');
+    return { text: new XMLSerializer().serializeToString(clone), w: cw, h: ch };
+  }
+
+  function vSaveSVG() {
+    var o = vExportSVG();
+    var pid = new URLSearchParams(location.search).get('product') || 'drawing';
+    vDownload(pid + '_' + view.rot + 'deg.svg', new Blob([o.text], { type:'image/svg+xml;charset=utf-8' }));
+    showToast('已下載 SVG');
+  }
+
+  function vSavePNG() {
+    var o = vExportSVG();
+    var pid = new URLSearchParams(location.search).get('product') || 'drawing';
+    var scale = Math.min(3, Math.max(1, 2400 / Math.max(o.w, o.h)));
+    var img = new Image();
+    var url = URL.createObjectURL(new Blob([o.text], { type:'image/svg+xml;charset=utf-8' }));
+    img.onload = function() {
+      var c = document.createElement('canvas');
+      c.width = Math.round(o.w * scale); c.height = Math.round(o.h * scale);
+      var ctx = c.getContext('2d');
+      ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, c.width, c.height);
+      ctx.drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url);
+      c.toBlob(function(b){
+        if (b) { vDownload(pid + '_' + view.rot + 'deg.png', b); showToast('已下載 PNG'); }
+        else showToast('PNG 產生失敗');
+      }, 'image/png');
+    };
+    img.onerror = function(){ URL.revokeObjectURL(url); showToast('PNG 產生失敗'); };
+    img.src = url;
+  }
+
+  function vBtn(label, title, fn, cls) {
+    var b = document.createElement('button');
+    b.type = 'button'; b.className = 'ezc-btn' + (cls ? ' ' + cls : '');
+    b.innerHTML = label; b.title = title; b.setAttribute('aria-label', title);
+    b.addEventListener('click', fn);
+    return b;
+  }
+  function vGroup(title) {
+    var g = document.createElement('div');
+    g.className = 'ezc-group';
+    var t = document.createElement('span');
+    t.className = 'ezc-title'; t.textContent = title;
+    g.appendChild(t);
+    return g;
+  }
+  function vSlider(min, max, step, val, onInput, cls) {
+    var s = document.createElement('input');
+    s.type = 'range'; s.min = String(min); s.max = String(max);
+    s.step = String(step); s.value = String(val);
+    s.className = 'ezc-range' + (cls ? ' ' + cls : '');
+    s.addEventListener('input', function(){ onInput(parseFloat(this.value)); });
+    return s;
+  }
+  function vOut(txt) {
+    var o = document.createElement('span');
+    o.className = 'ezc-out'; o.textContent = txt;
+    return o;
+  }
+
+  function addViewControls(container, svg) {
+    vSvg = svg; vBox = container; vUI = {};
+    var br = svg.getBoundingClientRect();
+    vBaseW = br.width || svg.clientWidth || 1;
+    vBaseH = br.height || svg.clientHeight || 1;
+    vLoad();
+
+    var scope = document.getElementById('svg-panel') || container.parentNode || container;
+    var old = scope.querySelector('.ezc-dock');
+    if (old) old.remove();
+    var dock = document.createElement('div');
+    dock.className = 'ezc-dock';
+
+    // ── 視圖：縮放 ──
+    var g1 = vGroup('縮放');
+    var row1 = document.createElement('div'); row1.className = 'ezc-row';
+    row1.appendChild(vBtn('−', '縮小', function(){ vZoom(-svgZoomStep); }));
+    vUI.zoomOut = vOut(Math.round(view.zoom * 100) + '%');
+    row1.appendChild(vUI.zoomOut);
+    row1.appendChild(vBtn('+', '放大', function(){ vZoom(svgZoomStep); }));
+    g1.appendChild(row1);
+    vUI.zoom = vSlider(svgZoomMin, svgZoomMax, 0.05, view.zoom, function(v){
+      view.zoom = vClamp(v, svgZoomMin, svgZoomMax); vApply(false);
+    });
+    vUI.zoom.setAttribute('aria-label', '縮放比例');
+    g1.appendChild(vUI.zoom);
+    dock.appendChild(g1);
+
+    // ── 旋轉 ──
+    var g2 = vGroup('旋轉');
+    var row2 = document.createElement('div'); row2.className = 'ezc-row';
+    row2.appendChild(vBtn('⟲', '逆時針 90°', function(){ vRotate(-90); }));
+    vUI.rotOut = vOut(view.rot + '°');
+    row2.appendChild(vUI.rotOut);
+    row2.appendChild(vBtn('⟳', '順時針 90°', function(){ vRotate(90); }));
+    g2.appendChild(row2);
+    vUI.rot = vSlider(0, 359, 1, view.rot, function(v){
+      view.rot = Math.round(v); vApply(false);
+    });
+    vUI.rot.setAttribute('aria-label', '旋轉角度');
+    g2.appendChild(vUI.rot);
+    var row2b = document.createElement('div'); row2b.className = 'ezc-row';
+    row2b.appendChild(vBtn('180°', '翻轉 180°', function(){ vRotate(180); }, 'ezc-wide'));
+    row2b.appendChild(vBtn('貼合', '貼合視窗', vFit, 'ezc-wide'));
+    g2.appendChild(row2b);
+    dock.appendChild(g2);
+
+    // ── 線條 ──
+    var g3 = vGroup('線寬');
+    var row3 = document.createElement('div'); row3.className = 'ezc-row';
+    vUI.strokeOut = vOut(view.stroke.toFixed(1) + 'px');
+    row3.appendChild(vUI.strokeOut);
+    row3.appendChild(vBtn('細', '細線（細齒／剖面圖）', function(){
+      view.stroke = 0.6; vApply(false);
+    }, 'ezc-wide'));
+    row3.appendChild(vBtn('粗', '粗線（淡圖加強）', function(){
+      view.stroke = 2.6; vApply(false);
+    }, 'ezc-wide'));
+    g3.appendChild(row3);
+    vUI.stroke = vSlider(0.2, 6, 0.1, view.stroke, function(v){
+      view.stroke = vClamp(v, 0.2, 6); vApply(false);
+    });
+    vUI.stroke.setAttribute('aria-label', '線條粗細');
+    g3.appendChild(vUI.stroke);
+    dock.appendChild(g3);
+
+    // ── 顯示 ──
+    var g4 = vGroup('顯示');
+    var row4 = document.createElement('div'); row4.className = 'ezc-row';
+    vUI.labels = vBtn('標籤', '零件標籤開關', function(){
+      view.labels = !view.labels; vApply(false);
+    }, 'ezc-toggle');
+    vUI.isolate = vBtn('聚焦', '淡化未選零件', function(){
+      view.isolate = !view.isolate; vApply(false);
+    }, 'ezc-toggle');
+    vUI.grid = vBtn('格線', '藍圖格線', function(){
+      view.grid = !view.grid; vApply(false);
+    }, 'ezc-toggle');
+    row4.appendChild(vUI.labels); row4.appendChild(vUI.isolate); row4.appendChild(vUI.grid);
+    g4.appendChild(row4);
+    dock.appendChild(g4);
+
+    // ── 輸出／重置 ──
+    var g5 = vGroup('輸出');
+    var row5 = document.createElement('div'); row5.className = 'ezc-row';
+    row5.appendChild(vBtn('SVG', '下載目前視圖 SVG', vSaveSVG, 'ezc-wide'));
+    row5.appendChild(vBtn('PNG', '下載目前視圖 PNG', vSavePNG, 'ezc-wide'));
+    g5.appendChild(row5);
+    var row6 = document.createElement('div'); row6.className = 'ezc-row';
+    row6.appendChild(vBtn('↺ 重置視圖', '重置縮放／旋轉／平移', vReset, 'ezc-wide ezc-reset'));
+    if (document.documentElement.requestFullscreen) {
+      row6.appendChild(vBtn('⛶', '全螢幕', function(){
+        if (document.fullscreenElement) document.exitFullscreen();
+        else container.requestFullscreen().catch(function(){});
+      }, 'ezc-wide'));
+    }
+    g5.appendChild(row6);
+    dock.appendChild(g5);
+
+    // dock 一律掛在 svg-panel 底下、圖面之外：桌面靠 flex row 變成右側
+    // 獨立欄，手機靠 column 變成圖面下方橫向滑軌。兩者都不遮住爆炸圖。
+    var panel = document.getElementById('svg-panel') || container.parentNode;
+    if (window.innerWidth <= 768) dock.classList.add('ezc-mobile');
+    panel.appendChild(dock);
+    vInstallGestures(container, svg);
+    vMeasureBase();
+    vApply(false);
+  }
+
+  function vInstallGestures(container, svg) {
+    if (container.__ezGestures) return;
+    container.__ezGestures = true;
+
+    // 滾輪縮放（不需按 Ctrl，圖面本来就是畫布）
+    container.addEventListener('wheel', function(e) {
+      if (e.target.closest && e.target.closest('.ezc-dock')) return;
+      e.preventDefault();
+      var d = (e.deltaY > 0 ? -1 : 1) * svgZoomStep * (e.ctrlKey ? 0.5 : 1);
+      view.zoom = vClamp(view.zoom + d, svgZoomMin, svgZoomMax);
+      vApply(false);
+    }, { passive:false });
+
+    // 雙擊：放大／回到 100%
+    container.addEventListener('dblclick', function(e) {
+      if (e.target.closest && e.target.closest('.ezc-dock')) return;
+      if (view.zoom > 1.4) { view.zoom = 1; view.panX = 0; view.panY = 0; }
+      else view.zoom = vClamp(view.zoom * 1.8, svgZoomMin, svgZoomMax);
+      vApply(true);
+    });
+
+    // 單指／滑鼠拖曳平移；雙指 pinch 縮放 + twist 旋轉
+    var pts = new Map(), start = null, pinch = null, moved = false;
+    function dist(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
+    function ang(a, b) { return Math.atan2(b.y - a.y, b.x - a.x) * 180 / Math.PI; }
+
+    container.addEventListener('pointerdown', function(e) {
+      if (e.target.closest && e.target.closest('.ezc-dock')) return;
+      pts.set(e.pointerId, { x:e.clientX, y:e.clientY });
+      moved = false;
+      if (pts.size === 1) {
+        start = { x:e.clientX, y:e.clientY, px:view.panX, py:view.panY };
+      } else if (pts.size === 2) {
+        var a = Array.from(pts.values());
+        pinch = { d:dist(a[0], a[1]), a:ang(a[0], a[1]), z:view.zoom, r:view.rot };
+        start = null;
+      }
+    });
+
+    container.addEventListener('pointermove', function(e) {
+      if (!pts.has(e.pointerId)) return;
+      pts.set(e.pointerId, { x:e.clientX, y:e.clientY });
+      if (pts.size >= 2 && pinch) {
+        var a = Array.from(pts.values());
+        var nd = dist(a[0], a[1]), na = ang(a[0], a[1]);
+        if (pinch.d > 8) {
+          view.zoom = vClamp(pinch.z * (nd / pinch.d), svgZoomMin, svgZoomMax);
+          var dr = na - pinch.a;
+          if (Math.abs(dr) > 6) view.rot = ((Math.round(pinch.r + dr) % 360) + 360) % 360;
+          moved = true;
+          vApply(false);
+        }
+        return;
+      }
+      if (!start) return;
+      var dx = e.clientX - start.x, dy = e.clientY - start.y;
+      if (!moved && Math.hypot(dx, dy) < 5) return;
+      // 未放大時單指留給頁面捲動（手機），放大後才平移
+      if (view.zoom <= 1.02 && e.pointerType === 'touch') return;
+      moved = true;
+      view.panX = start.px + dx; view.panY = start.py + dy;
+      if (container.setPointerCapture) {
+        try { container.setPointerCapture(e.pointerId); } catch (err) {}
+      }
+      vApply(false);
+    });
+
+    function up(e) {
+      pts.delete(e.pointerId);
+      if (pts.size < 2) pinch = null;
+      if (pts.size === 0) { start = null; }
+      if (moved) {
+        // 拖曳後抑制這一次 click，避免誤選零件
+        container.__ezSuppressClick = true;
+        setTimeout(function(){ container.__ezSuppressClick = false; }, 260);
+      }
+    }
+    container.addEventListener('pointerup', up);
+    container.addEventListener('pointercancel', up);
+    container.addEventListener('pointerleave', up);
+
+    // 鍵盤：+ - 縮放、[ ] 旋轉、0 重置、F 貼合
+    document.addEventListener('keydown', function(e) {
+      if (/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      var k = e.key;
+      if (k === '+' || k === '=') { e.preventDefault(); vZoom(svgZoomStep); }
+      else if (k === '-' || k === '_') { e.preventDefault(); vZoom(-svgZoomStep); }
+      else if (k === '[') { e.preventDefault(); vRotate(-90); }
+      else if (k === ']') { e.preventDefault(); vRotate(90); }
+      else if (k === '0') { e.preventDefault(); vReset(); }
+      else if (k === 'f' || k === 'F') { e.preventDefault(); vFit(); }
+    });
+  }
+
+  // 舊 API 相容（外部若曾呼叫）
+  function zoomSVG(svg, delta) { vZoom(delta); }
+  function resetSVGZoom(svg) { vReset(); }
 
   function updateLabels(svg, container) {
     bomData.forEach(function(item) {

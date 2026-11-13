@@ -113,7 +113,7 @@ svg:not(.hit-resolved) .svg-part:hover line,
 .svg-part.hovered ellipse,
 .svg-part.hovered line {
     stroke: #D97757 !important;
-    stroke-width: 3px !important;
+    stroke-width: calc(var(--ez-stroke, 2) * 1.7px) !important;
     fill: rgba(217, 119, 87, 0.1) !important;
 }
 /* 選中 */
@@ -127,7 +127,7 @@ svg:not(.hit-resolved) .svg-part:hover line,
 .svg-part.selected ellipse,
 .svg-part.selected line {
     stroke: #D97757 !important;
-    stroke-width: 3px !important;
+    stroke-width: calc(var(--ez-stroke, 2) * 1.7px) !important;
     fill: rgba(217, 119, 87, 0.1) !important;
 }
 /* SVG 零件高亮（來自 BOM 搜尋） */
@@ -141,7 +141,7 @@ svg:not(.hit-resolved) .svg-part:hover line,
 .svg-part.search-highlight ellipse,
 .svg-part.search-highlight line {
     stroke: #D97757 !important;
-    stroke-width: 4px !important;
+    stroke-width: calc(var(--ez-stroke, 2) * 2.2px) !important;
     fill: rgba(217, 119, 87, 0.15) !important;
 }
 @keyframes pulse-highlight {
@@ -159,7 +159,7 @@ svg:not(.hit-resolved) .svg-part:hover line,
 .svg-part.tap-highlight ellipse,
 .svg-part.tap-highlight line {
     stroke: #D97757 !important;
-    stroke-width: 3px !important;
+    stroke-width: calc(var(--ez-stroke, 2) * 1.7px) !important;
     fill: rgba(217, 119, 87, 0.1) !important;
 }
 
@@ -180,7 +180,7 @@ svg:not(.hit-resolved) .svg-part:hover line,
     .svg-part.search-highlight rect,
     .svg-part.search-highlight ellipse,
     .svg-part.search-highlight line {
-        stroke-width: 3px !important;
+        stroke-width: calc(var(--ez-stroke, 2) * 1.7px) !important;
     }
 }
 
@@ -292,12 +292,13 @@ svg:not(.hit-resolved) .svg-part:hover line,
     }
     .svg-panel {
         border-right: none; border-bottom: none;
-        height: 45vh; min-height: 280px; padding: 0;
-        display: flex;
+        height: auto; min-height: 0; padding: 0;
+        display: flex; flex-direction: column;
     }
     .svg-container {
-        min-height: 0; flex: 1; border-radius: 0;
-        overflow: auto; touch-action: pinch-zoom pan-x pan-y;
+        min-height: 0; flex: 0 0 auto;
+        height: 42vh; min-height: 240px; border-radius: 0;
+        overflow: hidden; touch-action: pan-y;
         -webkit-overflow-scrolling: touch;
     }
     .svg-container svg {
@@ -396,6 +397,150 @@ svg:not(.hit-resolved) .svg-part:hover line,
     background: none; color: #87867F; font-weight: 400; margin-top: 8px;
 }
 .pw-dialog .pw-cancel:hover { background: #F0EEE6; }
+
+/* ============================================================
+   視圖控制 dock — 縮放／旋轉／線寬／顯示／輸出
+   調色盤沿用爆炸圖語言：紙白表面、clay 主動作、steel 技術滑軌、
+   oat 邊框；scrollbar 也走同一組色，不留瀏覽器預設灰。
+   ============================================================ */
+.svg-container.ez-grid {
+    background-color: #F4F2EA;
+    background-image:
+        linear-gradient(to right, rgba(30,111,168,.07) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(30,111,168,.07) 1px, transparent 1px),
+        linear-gradient(to right, rgba(30,111,168,.13) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(30,111,168,.13) 1px, transparent 1px);
+    background-size: 20px 20px, 20px 20px, 100px 100px, 100px 100px;
+}
+.svg-container.ez-moved { cursor: grab; }
+.svg-container.ez-moved:active { cursor: grabbing; }
+.svg-container.ez-nolabels .part-label { display: none; }
+.svg-container.ez-isolate .svg-part:not(.selected):not(.hovered):not(.search-highlight) {
+    opacity: .2; transition: opacity .18s ease;
+}
+.svg-container.ez-isolate .svg-part.selected { opacity: 1; }
+.svg-container svg { transition: transform .18s cubic-bezier(.3,.8,.3,1); }
+/* 線寬單一來源：--ez-stroke 由 vApplyStroke 換算成使用者單位後寫在 svg 上，
+   所有形狀繼承；highlight 規則用 !important 覆寫成倍數，不受影響。 */
+.svg-container svg path,
+.svg-container svg circle,
+.svg-container svg rect,
+.svg-container svg ellipse,
+.svg-container svg line,
+.svg-container svg polyline,
+.svg-container svg polygon {
+    stroke-width: calc(var(--ez-stroke, 2) * 1px);
+    vector-effect: none;
+}
+
+/* 桌面：svg-panel 轉 row，dock 成為圖面右側獨立欄（不 overlay） */
+@media (min-width: 769px) {
+    .svg-panel { flex-direction: row; align-items: stretch; gap: 10px; }
+    .svg-panel .svg-container { flex: 1 1 auto; min-width: 0; }
+}
+.ezc-dock {
+    position: relative; flex: 0 0 182px; align-self: stretch;
+    z-index: 600;
+    width: 182px; max-height: 100%;
+    overflow-y: auto; overscroll-behavior: contain;
+    display: flex; flex-direction: column; gap: 7px;
+    padding: 9px; border-radius: 12px;
+    background: rgba(255,255,255,.93);
+    backdrop-filter: saturate(1.4) blur(10px);
+    -webkit-backdrop-filter: saturate(1.4) blur(10px);
+    border: 1px solid #D1CFC5;
+    box-shadow: 0 8px 26px rgba(20,20,19,.13), 0 1px 3px rgba(20,20,19,.07);
+    scrollbar-width: thin; scrollbar-color: #C4BBA8 #F0EEE6;
+}
+.ezc-dock::-webkit-scrollbar { width: 8px; height: 8px; }
+.ezc-dock::-webkit-scrollbar-track { background: #F0EEE6; border-radius: 99px; }
+.ezc-dock::-webkit-scrollbar-thumb { background: #C4BBA8; border-radius: 99px; border: 2px solid #F0EEE6; }
+.ezc-dock::-webkit-scrollbar-thumb:hover { background: #D97757; }
+
+.ezc-group {
+    display: flex; flex-direction: column; gap: 5px;
+    padding: 7px 8px 8px; border-radius: 9px;
+    background: #FAF9F5; border: 1px solid #E6E3DA;
+}
+.ezc-title {
+    font-size: 9.5px; font-weight: 700; letter-spacing: 1.3px;
+    text-transform: uppercase; color: #87867F;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.ezc-row { display: flex; align-items: center; gap: 4px; }
+.ezc-btn {
+    flex: 0 0 auto; min-width: 28px; height: 28px; padding: 0 7px;
+    border: 1px solid #D1CFC5; border-radius: 7px;
+    background: #FFFFFF; color: #141413;
+    font-family: inherit; font-size: 14px; line-height: 1;
+    cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+    transition: background .14s, border-color .14s, color .14s, transform .1s;
+}
+.ezc-btn:hover { background: #FBEDE7; border-color: #D97757; color: #B85C3E; }
+.ezc-btn:active { transform: scale(.94); }
+.ezc-btn:focus-visible { outline: 2px solid #1E6FA8; outline-offset: 1px; }
+.ezc-btn.ezc-wide { flex: 1 1 0; font-size: 11.5px; font-weight: 600; }
+.ezc-btn.ezc-reset { background: #F0EEE6; }
+.ezc-btn.ezc-reset:hover { background: #D97757; border-color: #B85C3E; color: #fff; }
+.ezc-btn.ezc-toggle { flex: 1 1 0; font-size: 11px; font-weight: 600; }
+.ezc-btn.ezc-toggle[aria-pressed="true"] {
+    background: #1E6FA8; border-color: #14507A; color: #fff;
+    box-shadow: 0 2px 8px rgba(30,111,168,.32);
+}
+.ezc-out {
+    flex: 1 1 auto; text-align: center;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11.5px; font-weight: 700; color: #B85C3E;
+    background: #FBEDE7; border-radius: 6px; padding: 4px 2px;
+    white-space: nowrap;
+}
+.ezc-range {
+    -webkit-appearance: none; appearance: none;
+    width: 100%; height: 20px; background: transparent; cursor: pointer; margin: 0;
+}
+.ezc-range::-webkit-slider-runnable-track {
+    height: 5px; border-radius: 99px;
+    background: linear-gradient(90deg, #1E6FA8, #7E8FA0 55%, #E3DACC);
+}
+.ezc-range::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 15px; height: 15px; margin-top: -5px; border-radius: 50%;
+    background: #FFFFFF; border: 2.5px solid #D97757;
+    box-shadow: 0 1px 4px rgba(20,20,19,.28);
+}
+.ezc-range::-webkit-slider-thumb:hover { background: #FBEDE7; }
+.ezc-range::-moz-range-track {
+    height: 5px; border-radius: 99px;
+    background: linear-gradient(90deg, #1E6FA8, #7E8FA0 55%, #E3DACC);
+}
+.ezc-range::-moz-range-thumb {
+    width: 13px; height: 13px; border-radius: 50%;
+    background: #FFFFFF; border: 2.5px solid #D97757;
+    box-shadow: 0 1px 4px rgba(20,20,19,.28);
+}
+.ezc-range:focus-visible { outline: 2px solid #1E6FA8; outline-offset: 2px; border-radius: 99px; }
+
+/* 手機：dock 移到圖面下方當常駐橫向滑軌，不遮住爆炸圖 */
+@media (max-width: 768px) {
+    .ezc-dock.ezc-mobile {
+        position: static; width: auto; max-height: none;
+        flex-direction: row; align-items: stretch; gap: 6px;
+        overflow-x: auto; overflow-y: hidden;
+        border-radius: 0; border-left: 0; border-right: 0;
+        padding: 7px 10px; box-shadow: 0 -2px 10px rgba(20,20,19,.07);
+        background: rgba(255,255,255,.97);
+        scroll-snap-type: x proximity;
+    }
+    .ezc-dock.ezc-mobile .ezc-group {
+        flex: 0 0 auto; min-width: 148px; scroll-snap-align: start;
+    }
+    .ezc-dock.ezc-mobile .ezc-btn { height: 32px; min-width: 32px; }
+    .ezc-dock.ezc-mobile .ezc-range { height: 24px; }
+    .ezc-dock.ezc-mobile::-webkit-scrollbar { height: 6px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .svg-container svg, .ezc-btn, .svg-container.ez-isolate .svg-part { transition: none; }
+}
 
 
 
