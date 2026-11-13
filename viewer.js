@@ -744,22 +744,11 @@
     layer.appendChild(p);
   }
 
-  function ezRenderSelection() {
-    var svg = ezEnsureLayers();
-    if (!svg || !ezSelLayer) return;
-    ezSelLayer.textContent = '';
-    selectedParts.forEach(function(entry, partId) {
-      var g = svg.querySelector('.svg-part[data-part-id="' + partId + '"]');
-      if (g) ezPaint(ezSelLayer, g, partId, 'ez-sel-path');
-    });
-  }
-
-  function ezRenderHover(g) {
-    var svg = ezEnsureLayers();
-    if (!svg || !ezHoverLayer) return;
-    ezHoverLayer.textContent = '';
-    if (g) ezPaint(ezHoverLayer, g, g.getAttribute('data-part-id'), 'ez-hover-path');
-  }
+  // 2026-11-14 还原「整组放大变红」：停用丛集覆盖层绘制（使用者回报覆盖层
+  // 只有一条线变红、比昨天下午差）。高亮改回 .svg-part.hovered/.selected
+  // 的整组著色（scale 1.1 + 红描边 + 红填充 + 光晕，见 viewer.css）。
+  function ezRenderSelection() { if (ezSelLayer) ezSelLayer.textContent = ''; }
+  function ezRenderHover(g) { if (ezHoverLayer) ezHoverLayer.textContent = ''; }
 
   function updateStats() {
     var totalQty = 0;

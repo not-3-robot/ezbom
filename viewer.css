@@ -405,29 +405,11 @@ svg:not(.hit-resolved) .svg-part:hover line,
 .svg-container.ez-moved { cursor: grab; }
 .svg-container.ez-moved:active { cursor: grabbing; }
 .svg-container svg { transition: transform .18s cubic-bezier(.3,.8,.3,1); }
-/* ===== 丛集级高亮 =====
-   归组会把邻件吸进同一群组（P34 实测 1071 子路径／10 丛集／跨全图 80%），
-   整组套 .selected 会把散在全图的同料号实例一起亮起＝「选一件连带别件」。
-   丛集模式启用时，关掉群组级著色，改由覆盖层只画目标丛集。 */
-svg.ez-cluster-sel .svg-part.selected,
-svg.ez-cluster-sel .svg-part.hovered {
-    filter: none;
-    transform: none;
-}
-svg.ez-cluster-sel .svg-part.selected path,
-svg.ez-cluster-sel .svg-part.selected circle,
-svg.ez-cluster-sel .svg-part.selected rect,
-svg.ez-cluster-sel .svg-part.selected ellipse,
-svg.ez-cluster-sel .svg-part.selected line,
-svg.ez-cluster-sel .svg-part.hovered path,
-svg.ez-cluster-sel .svg-part.hovered circle,
-svg.ez-cluster-sel .svg-part.hovered rect,
-svg.ez-cluster-sel .svg-part.hovered ellipse,
-svg.ez-cluster-sel .svg-part.hovered line {
-    stroke: #141413 !important;
-    stroke-width: calc(var(--ez-stroke, 2) * 1px) !important;
-    fill: none !important;
-}
+/* ===== 高亮：整组放大变红（2026-11-14 还原）=====
+   使用者明确要求「整体放大变红，不是只有一条线变红」，且回报丛集覆盖层
+   版本「比昨天下午还差」。故移除丛集级抑制规则，恢复 .svg-part.hovered /
+   .selected 的整组著色（上方 scale 1.1 + 红描边 + 红填充 + 光晕）。
+   覆盖层绘制已在 viewer.js 停用（ezRenderHover/ezRenderSelection 清空不画）。 */
 .ez-sel-layer, .ez-hover-layer { pointer-events: none; }
 .ez-sel-path, .ez-hover-path {
     fill: none;
@@ -441,16 +423,23 @@ svg.ez-cluster-sel .svg-part.hovered line {
    否则 ×1.9/×1.6 加粗会被吞掉＝高亮跟黑线一样粗、看不出选取效果
    （2026-11-13 使用者回报「红色放大效果没有了」的根因之一） */
 .svg-container svg .ez-sel-path {
+    fill: #DC2626;
+    fill-opacity: 1;
+    fill-rule: evenodd;
     stroke-width: calc(var(--ez-stroke, 2) * 2.4px);
     filter: drop-shadow(0 0 10px rgba(220,38,38,.85));
     transform: scale(1.2);
 }
 .svg-container svg .ez-hover-path {
+    /* 2026-11-14 使用者要求「整体放大变红，不是只有一条线变红」：
+       覆盖层改实心红填充（fill-rule:evenodd 保留孔洞）＋放大，画的是整个
+       目标零件的红色实体而非描边。真红 #DC2626 + scale 1.15 + 红光晕 + 淡入；
+       选取 scale 1.2 更大，hover 预览与确认选取层次分明。 */
+    fill: #DC2626;
+    fill-opacity: 1;
+    fill-rule: evenodd;
     stroke-width: calc(var(--ez-stroke, 2) * 2.2px);
     opacity: 1;
-    /* 2026-11-14 使用者要求「放大变红」：丛集模式把群组强制变黑、改由覆盖层
-       画目标丛集，故红＋放大效果做在覆盖层。真红 #DC2626 + 加粗 + scale 1.15
-       + 红光晕 + 淡入；选取 scale 1.2 更大，hover 预览与确认选取层次分明。 */
     filter: drop-shadow(0 0 9px rgba(220,38,38,.7));
     transform: scale(1.15);
     animation: ezHoverIn .14s ease-out;
