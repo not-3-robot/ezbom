@@ -566,6 +566,199 @@
     document.querySelectorAll('[data-part-id="' + partId + '"]').forEach(function(el) {
       el.classList.toggle('selected', selected);
     });
+    ezRenderSelection();
+  }
+
+  // ========================================================================
+  // 叢集級高亮：只亮使用者點到的那一個實體零件
+  // 歸組（assign_components 區域生長）會把鄰件吸進同一群組——實測
+  // ch160-ushort-trolley P34 有 1071 條子路徑、10 個空間分離叢集、
+  // bbox 橫跨全圖 80%。整組套 .selected 會把散在全圖的同一料號實例
+  // 一起亮起來＝「選一件連帶別件」；只亮到部分叢集＝「只顯示一半」。
+  // 這裡不改原始幾何，改用覆蓋層只畫出目標叢集。
+  // ========================================================================
+  var ezClusterCache = new WeakMap();
+  var ezSelLayer = null, ezHoverLayer = null, ezPick = null;
+
+  function ezSvg() { return document.querySelector('#svg-container svg'); }
+
+  function ezClustersOf(g) {
+    var hit = ezClusterCache.get(g);
+    if (hit) return hit;
+    var svg = ezSvg();
+    var path = g.querySelector('path');
+    var d = path ? (path.getAttribute('d') || '') : '';
+    var subs = d.match(/M[^M]*/g) || [];
+    if (!svg || subs.length < 2) {
+      var single = [{ d:d, n:subs.length, bb:null }];
+      ezClusterCache.set(g, single);
+      return single;
+    }
+    // 用暫時 path 量每條子路徑 bbox（含 A/C 等指令也準確）
+    var NS = 'http://www.w3.org/2000/svg';
+    var probe = document.createElementNS(NS, 'path');
+    probe.setAttribute('fill', 'none');
+    probe.setAttribute('stroke', 'none');
+    probe.style.visibility = 'hidden';
+    svg.appendChild(probe);
+    var items = [];
+    for (var i = 0; i < subs.length; i++) {
+      probe.setAttribute('d', subs[i]);
+      var b;
+      try { b = probe.getBBox(); } catch (e) { b = null; }
+      if (!b || (b.width === 0 && b.height === 0)) continue;
+      items.push({ d:subs[i], x0:b.x, y0:b.y, x1:b.x + b.width, y1:b.y + b.height });
+    }
+    svg.removeChild(probe);
+    if (!items.length) { ezClusterCache.set(g, [{ d:d, n:subs.length, bb:null }]); return ezClusterCache.get(g); }
+
+    var vb = svg.viewBox.baseVal;
+    var gap = Math.hypot(vb.width, vb.height) * 0.02;
+    // 網格雜湊做鄰近合併，避免 O(n²)（P36 有 2802 條子路徑）
+    var par = items.map(function(_, k){ return k; });
+    function find(x){ while (par[x] !== x) { par[x] = par[par[x]]; x = par[x]; } return x; }
+    var cell = Math.max(gap, 1e-6), grid = {};
+    function key(cx, cy){ return cx + ':' + cy; }
+    items.forEach(function(it, k){
+      var cx0 = Math.floor(it.x0 / cell), cx1 = Math.floor(it.x1 / cell);
+      var cy0 = Math.floor(it.y0 / cell), cy1 = Math.floor(it.y1 / cell);
+      for (var a = cx0; a <= cx1; a++) for (var b2 = cy0; b2 <= cy1; b2++) {
+        var kk = key(a, b2);
+        (grid[kk] = grid[kk] || []).push(k);
+      }
+    });
+    Object.keys(grid).forEach(function(kk){
+      var lst = grid[kk];
+      for (var a = 0; a < lst.length; a++) for (var b2 = a + 1; b2 < lst.length; b2++) {
+        var i1 = lst[a], i2 = lst[b2], A = items[i1], B = items[i2];
+        var dx = Math.max(0, Math.max(A.x0, B.x0) - Math.min(A.x1, B.x1));
+        var dy = Math.max(0, Math.max(A.y0, B.y0) - Math.min(A.y1, B.y1));
+        if (Math.hypot(dx, dy) <= gap) par[find(i1)] = find(i2);
+      }
+    });
+    var buckets = {};
+    items.forEach(function(it, k){ var r = find(k); (buckets[r] = buckets[r] || []).push(it); });
+    var clusters = Object.keys(buckets).map(function(r){
+      var bs = buckets[r];
+      var x0 = Math.min.apply(null, bs.map(function(x){ return x.x0; }));
+      var y0 = Math.min.apply(null, bs.map(function(x){ return x.y0; }));
+      var x1 = Math.max.apply(null, bs.map(function(x){ return x.x1; }));
+      var y1 = Math.max.apply(null, bs.map(function(x){ return x.y1; }));
+      return { d:bs.map(function(x){ return x.d; }).join(''), n:bs.length,
+               bb:{ x:x0, y:y0, w:x1 - x0, h:y1 - y0 },
+               cx:(x0 + x1) / 2, cy:(y0 + y1) / 2 };
+    });
+    clusters.sort(function(a, b){ return b.n - a.n; });
+    ezClusterCache.set(g, clusters);
+    return clusters;
+  }
+
+  function ezEnsureLayers() {
+    var svg = ezSvg();
+    if (!svg) return null;
+    if (!ezSelLayer || ezSelLayer.parentNode !== svg) {
+      var NS = 'http://www.w3.org/2000/svg';
+      ezHoverLayer = document.createElementNS(NS, 'g');
+      ezHoverLayer.setAttribute('class', 'ez-hover-layer');
+      ezSelLayer = document.createElementNS(NS, 'g');
+      ezSelLayer.setAttribute('class', 'ez-sel-layer');
+      svg.appendChild(ezHoverLayer);
+      svg.appendChild(ezSelLayer);
+      svg.classList.add('ez-cluster-sel');
+    }
+    return svg;
+  }
+
+  function ezPickCluster(g, partId) {
+    var cs = ezClustersOf(g);
+    if (cs.length < 2 || !cs[0].bb) return cs[0];
+    if (ezPick && ezPick.id === partId) {
+      var best = null, bd = Infinity;
+      for (var i = 0; i < cs.length; i++) {
+        var c = cs[i], b = c.bb;
+        var dx = Math.max(0, Math.max(b.x, ezPick.x) - Math.min(b.x + b.w, ezPick.x));
+        var dy = Math.max(0, Math.max(b.y, ezPick.y) - Math.min(b.y + b.h, ezPick.y));
+        var dd = Math.hypot(dx, dy);
+        if (dd < bd) { bd = dd; best = c; }
+      }
+      if (best) return best;
+    }
+    return cs[0];   // BOM 列點選沒有座標：亮最大叢集（主實例）
+  }
+
+  // 未歸組（X000，無 inkscape:label）的幾何：同一實體零件常被拆到
+  // 「有料號群組」與 X000 兩邊，只亮料號那組＝使用者看到的「只顯示一半」。
+  // 這裡把落在目標叢集範圍內的未歸組子路徑一起補進高亮。
+  var ezStrayCache = null;
+  function ezStrays() {
+    if (ezStrayCache) return ezStrayCache;
+    var svg = ezSvg();
+    if (!svg) return [];
+    var NS = 'http://www.w3.org/2000/svg';
+    var probe = document.createElementNS(NS, 'path');
+    probe.setAttribute('fill', 'none'); probe.setAttribute('stroke', 'none');
+    probe.style.visibility = 'hidden';
+    svg.appendChild(probe);
+    var out = [];
+    var paths = svg.querySelectorAll('path');
+    for (var i = 0; i < paths.length; i++) {
+      var pp = paths[i];
+      if (pp.closest('.svg-part') || pp.closest('.ez-sel-layer') || pp.closest('.ez-hover-layer')) continue;
+      var subs = (pp.getAttribute('d') || '').match(/M[^M]*/g) || [];
+      for (var j = 0; j < subs.length; j++) {
+        probe.setAttribute('d', subs[j]);
+        var b;
+        try { b = probe.getBBox(); } catch (e) { b = null; }
+        if (!b || (b.width === 0 && b.height === 0)) continue;
+        out.push({ d:subs[j], cx:b.x + b.width / 2, cy:b.y + b.height / 2,
+                   x0:b.x, y0:b.y, x1:b.x + b.width, y1:b.y + b.height });
+      }
+    }
+    svg.removeChild(probe);
+    ezStrayCache = out;
+    return out;
+  }
+
+  function ezPaint(layer, g, partId, cls) {
+    var svg = ezEnsureLayers();
+    if (!svg || !g) return;
+    var c = ezPickCluster(g, partId);
+    if (!c || !c.d) return;
+    var d = c.d;
+    if (c.bb) {
+      var b = c.bb;
+      var mx = Math.max(b.w * 0.18, 2), my = Math.max(b.h * 0.18, 2);
+      var strays = ezStrays();
+      for (var i = 0; i < strays.length; i++) {
+        var s = strays[i];
+        if (s.cx >= b.x - mx && s.cx <= b.x + b.w + mx &&
+            s.cy >= b.y - my && s.cy <= b.y + b.h + my) d += s.d;
+      }
+    }
+    var NS = 'http://www.w3.org/2000/svg';
+    var p = document.createElementNS(NS, 'path');
+    p.setAttribute('d', d);
+    p.setAttribute('class', cls);
+    p.setAttribute('fill', 'none');
+    p.setAttribute('pointer-events', 'none');
+    layer.appendChild(p);
+  }
+
+  function ezRenderSelection() {
+    var svg = ezEnsureLayers();
+    if (!svg || !ezSelLayer) return;
+    ezSelLayer.textContent = '';
+    selectedParts.forEach(function(entry, partId) {
+      var g = svg.querySelector('.svg-part[data-part-id="' + partId + '"]');
+      if (g) ezPaint(ezSelLayer, g, partId, 'ez-sel-path');
+    });
+  }
+
+  function ezRenderHover(g) {
+    var svg = ezEnsureLayers();
+    if (!svg || !ezHoverLayer) return;
+    ezHoverLayer.textContent = '';
+    if (g) ezPaint(ezHoverLayer, g, g.getAttribute('data-part-id'), 'ez-hover-path');
   }
 
   function updateStats() {
@@ -856,6 +1049,16 @@
       if (!g) return;
       var partId = g.getAttribute('data-part-id');
       if (!partId) return;
+      // 記錄點擊點（SVG user units），供叢集級高亮挑出正確實例
+      try {
+        var cm = svg.getScreenCTM();
+        if (cm && svg.createSVGPoint) {
+          var cp = svg.createSVGPoint();
+          cp.x = ev.clientX; cp.y = ev.clientY;
+          var lp = cp.matrixTransform(cm.inverse());
+          ezPick = { id: partId, x: lp.x, y: lp.y };
+        }
+      } catch (e) { ezPick = null; }
       togglePartSelection(partId);
       if (window.innerWidth <= 768) {
         var el = labelOf(g);
@@ -884,6 +1087,7 @@
         var cur = labelOf(hovered);
         if (cur) cur.classList.add('show');
       }
+      ezRenderHover(hovered);
     }
     svg.addEventListener('pointermove', function(ev) {
       if (ev.pointerType === 'touch') return;
@@ -892,7 +1096,19 @@
       raf = requestAnimationFrame(function() {
         raf = 0;
         if (!pending) return;
-        applyHover(resolveAt(pending[0], pending[1]));
+        var hg = resolveAt(pending[0], pending[1]);
+        if (hg) {
+          try {
+            var hm = svg.getScreenCTM();
+            if (hm && svg.createSVGPoint) {
+              var hp = svg.createSVGPoint();
+              hp.x = pending[0]; hp.y = pending[1];
+              var hl = hp.matrixTransform(hm.inverse());
+              ezPick = { id: hg.getAttribute('data-part-id'), x: hl.x, y: hl.y };
+            }
+          } catch (e) {}
+        }
+        applyHover(hg);
       });
     });
     svg.addEventListener('pointerleave', function() {
@@ -977,6 +1193,10 @@
 
       // 點擊／hover 改由委派監聽 + 最小零件優先解析（見 installHitResolution）
       installHitResolution(svg, container);
+      // 覆蓋層要在載入時就建立並掛上 ez-cluster-sel，否則尚未選取任何
+      // 零件時 hover 仍會走舊的整組著色（＝連帶別件）。
+      ezEnsureLayers();
+      ezRenderSelection();
 
       console.log('已處理 ' + foundParts + ' 個零件');
       if (!bomInitialized) { initBOMList(); }
