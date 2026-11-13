@@ -138,7 +138,7 @@
         <div id="tab-overview">
             <div class="stats-row">
                 <div>
-                    <h3>📅 每日活躍用戶</h3>
+                    <h3>📅 每月採購數量</h3>
                     <div id="daily-chart"><div class="loading">載入中...</div></div>
                 </div>
                 <div>
@@ -302,12 +302,18 @@ function renderStats(stats, analytics) {
     });
     var maxQty = Math.max.apply(null, allMonthly.map(function(m) { return m.totalQty; }).concat([1]));
 
+    // 資料來源＝data/purchases/*.csv 的真實採購紀錄（經 generate_stats.py
+    // 彙整成 stats.json 的 monthlyStats），不是網站流量。標題與表頭必須
+    // 說「採購數量」，舊版標成「每日活躍用戶」會讓報表被誤讀。
     document.getElementById('daily-chart').innerHTML = allMonthly.length === 0
-        ? '<div class="empty">暫無月度數據</div>'
-        : '<table>' + allMonthly.map(function(m) {
+        ? '<div class="empty">暫無採購紀錄</div>'
+        : '<table><thead><tr><th style="width:80px;text-align:left">月份</th>'
+          + '<th style="text-align:left">採購數量趨勢</th>'
+          + '<th style="width:56px;text-align:right">件數</th></tr></thead><tbody>'
+          + allMonthly.map(function(m) {
             var pct = (m.totalQty / maxQty * 100).toFixed(0);
-            return '<tr><td style="width:80px">' + m.month + '</td><td><div class="bar-wrap"><div class="bar-fill" style="width:' + pct + '%"></div></div></td><td style="width:50px;text-align:right">' + m.totalQty + '</td></tr>';
-          }).join('') + '</table>';
+            return '<tr><td>' + m.month + '</td><td><div class="bar-wrap"><div class="bar-fill" style="width:' + pct + '%"></div></div></td><td style="text-align:right">' + m.totalQty + '</td></tr>';
+          }).join('') + '</tbody></table>';
 
     // 設備分佈（來自 localStorage）
     var deviceHTML = '<div class="empty">暫無瀏覽數據</div>';
