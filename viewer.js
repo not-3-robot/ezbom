@@ -802,6 +802,10 @@
         path.style.stroke = '#141413';
         path.style.strokeWidth = '2px';
         path.style.fill = 'none';
+        // fill:none + 預設 pointer-events(visiblePainted) → 只有 2px 描邊可點，
+        // 零件內部點下去命中的是 <svg> 背景（實測 elementFromPoint 中心=svg）。
+        // 'all' 讓未填色的內部也接收滑鼠事件：桌面 hover 變大變紅、手機才點得到。
+        path.style.pointerEvents = 'all';
       });
 
       var foundParts = 0;
