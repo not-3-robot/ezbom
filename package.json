@@ -1,7 +1,7 @@
 {
   "name": "ezbom",
   "version": "1.0.0",
-  "description": "EzBOM — 爆炸圖零件清單與詢價系統",
+  "description": "EzBOM — 爆炸图零件清单与询价系统",
   "private": true,
   "scripts": {
     "deploy": "bash deploy.sh",

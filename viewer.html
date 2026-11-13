@@ -14,18 +14,18 @@
 </head>
 <body>
 
-    <!-- 載入畫面 -->
+    <!-- 载入画面 -->
     <div id="loading">
         <div class="spinner"></div>
-        <span id="loading-text">載入產品資料...</span>
+        <span id="loading-text">载入产品资料...</span>
         <div id="loading-error"></div>
     </div>
 
-    <!-- 頂部欄 -->
+    <!-- 顶部栏 -->
     <div class="topbar">
-        <button class="back-btn" onclick="goBack()">← 產品列表</button>
-        <h1 id="product-title">載入中...</h1>
-        <button class="back-btn" onclick="shareProduct()" title="分享此產品">🔗</button>
+        <button class="back-btn" onclick="goBack()">← 产品列表</button>
+        <h1 id="product-title">载入中...</h1>
+        <button class="back-btn" onclick="shareProduct()" title="分享此产品">🔗</button>
 
     </div>
 
@@ -34,123 +34,123 @@
         <!-- SVG 面板 -->
         <div class="svg-panel" id="svg-panel">
             <div class="svg-container" id="svg-container">
-                <div style="text-align:center;padding:20px;color:#87867F;font-size:14px;">載入爆炸圖...</div>
+                <div style="text-align:center;padding:20px;color:#87867F;font-size:14px;">载入爆炸图...</div>
             </div>
         </div>
 
         <!-- BOM 面板 -->
         <div class="bom-panel active" id="bom-panel">
-            <!-- 統計 -->
+            <!-- 统计 -->
             <div>
-                <h2>詢價統計</h2>
+                <h2>询价统计</h2>
                 <div class="stats-summary">
-                    <div class="stats-item"><span>已選擇</span><strong id="selected-count">0</strong></div>
-                    <div class="stats-item"><span>總數量</span><strong id="total-quantity">0</strong></div>
+                    <div class="stats-item"><span>已选择</span><strong id="selected-count">0</strong></div>
+                    <div class="stats-item"><span>总数量</span><strong id="total-quantity">0</strong></div>
                 </div>
             </div>
 
-            <!-- 已選擇 -->
+            <!-- 已选择 -->
             <div>
                 <div style="display:flex;justify-content:space-between;align-items:center;">
-                    <h2>已選擇零件</h2>
-                    <button onclick="undo()" style="padding:2px 8px;border:1px solid #E6E3DA;border-radius:4px;background:white;cursor:pointer;font-size:11px;color:#87867F;" title="復原 (Ctrl+Z)">↩ 復原</button>
+                    <h2>已选择零件</h2>
+                    <button onclick="undo()" style="padding:2px 8px;border:1px solid #E6E3DA;border-radius:4px;background:white;cursor:pointer;font-size:11px;color:#87867F;" title="复原 (Ctrl+Z)">↩ 复原</button>
                 </div>
                 <div class="selected-items" id="selected-list"></div>
             </div>
 
             <!-- 收件信箱 -->
             <div style="margin-bottom:8px;">
-                <label style="font-size:12px;color:#87867F;display:block;margin-bottom:4px;">詢價收件信箱</label>
+                <label style="font-size:12px;color:#87867F;display:block;margin-bottom:4px;">询价收件信箱</label>
                 <div style="display:flex;gap:6px;">
                     <input type="email" class="search-box" id="email-input" value=""
-                        style="flex:1;margin-bottom:0;" placeholder="輸入詢價收件信箱...">
-                    <button onclick="saveEmail()" style="padding:8px 12px;border:1px solid #E6E3DA;border-radius:6px;background:white;cursor:pointer;font-size:12px;white-space:nowrap;">儲存</button>
+                        style="flex:1;margin-bottom:0;" placeholder="输入询价收件信箱...">
+                    <button onclick="saveEmail()" style="padding:8px 12px;border:1px solid #E6E3DA;border-radius:6px;background:white;cursor:pointer;font-size:12px;white-space:nowrap;">储存</button>
                 </div>
             </div>
 
-            <!-- 發送按鈕 -->
+            <!-- 发送按钮 -->
             <div style="display:flex;gap:6px;">
-                <button class="email-btn" onclick="sendInquiry()" id="email-btn" disabled style="flex:1;">發送詢價郵件</button>
-                <button onclick="copyInquiry()" id="copy-btn" style="padding:12px 16px;border:1px solid #E6E3DA;border-radius:8px;background:white;cursor:pointer;font-size:14px;color:#D97757;font-weight:600;white-space:nowrap;" title="複製詢價清單到剪貼簿">📋 複製</button>
+                <button class="email-btn" onclick="sendInquiry()" id="email-btn" disabled style="flex:1;">发送询价邮件</button>
+                <button onclick="copyInquiry()" id="copy-btn" style="padding:12px 16px;border:1px solid #E6E3DA;border-radius:8px;background:white;cursor:pointer;font-size:14px;color:#D97757;font-weight:600;white-space:nowrap;" title="复制询价清单到剪贴簿">📋 复制</button>
             </div>
 
-            <!-- BOM 清單 -->
+            <!-- BOM 清单 -->
             <div>
-                <h2>零件清單</h2>
-                <input type="text" class="search-box" id="search-box" placeholder="搜尋編號或名稱..." oninput="filterBOM()">
+                <h2>零件清单</h2>
+                <input type="text" class="search-box" id="search-box" placeholder="搜寻编号或名称..." oninput="filterBOM()">
                 <div class="bom-toolbar">
-                    <button onclick="selectAll()">全選 (Ctrl+A)</button>
+                    <button onclick="selectAll()">全选 (Ctrl+A)</button>
                     <button onclick="clearAll()">清除 (Esc)</button>
                 </div>
-                <div class="bom-list-container" role="listbox" aria-label="零件清單"><div id="bom-list"></div></div>
+                <div class="bom-list-container" role="listbox" aria-label="零件清单"><div id="bom-list"></div></div>
             </div>
 
-            <!-- 採購統計（默認隱藏，由 tab 切換） -->
+            <!-- 采购统计（默认隐藏，由 tab 切换） -->
             <div id="stats-panel" style="display:none;">
-                <h2>採購統計</h2>
-                <div id="stats-loading" style="text-align:center;padding:20px;color:#87867F;">載入統計資料...</div>
+                <h2>采购统计</h2>
+                <div id="stats-loading" style="text-align:center;padding:20px;color:#87867F;">载入统计资料...</div>
                 <div id="stats-content" style="display:none;">
-                    <!-- 高頻零件 -->
+                    <!-- 高频零件 -->
                     <div style="margin-bottom:16px;">
-                        <h3 style="font-size:14px;color:#D97757;margin-bottom:8px;">🔥 高頻購買零件 TOP 5</h3>
+                        <h3 style="font-size:14px;color:#D97757;margin-bottom:8px;">🔥 高频购买零件 TOP 5</h3>
                         <div id="hot-parts-list" style="background:#F0EEE6;border-radius:8px;padding:8px;"></div>
                     </div>
-                    <!-- 客戶排名 -->
+                    <!-- 客户排名 -->
                     <div style="margin-bottom:16px;">
-                        <h3 style="font-size:14px;color:#141413;margin-bottom:8px;">🏢 客戶購買排名</h3>
+                        <h3 style="font-size:14px;color:#141413;margin-bottom:8px;">🏢 客户购买排名</h3>
                         <div id="customer-stats" style="background:#F0EEE6;border-radius:8px;padding:8px;"></div>
                     </div>
-                    <!-- 月度趨勢 -->
+                    <!-- 月度趋势 -->
                     <div style="margin-bottom:16px;">
-                        <h3 style="font-size:14px;color:#141413;margin-bottom:8px;">📈 月度購買趨勢</h3>
+                        <h3 style="font-size:14px;color:#141413;margin-bottom:8px;">📈 月度购买趋势</h3>
                         <div id="monthly-stats" style="background:#F0EEE6;border-radius:8px;padding:8px;"></div>
                     </div>
                 </div>
                 <div id="stats-empty" style="display:none;text-align:center;padding:40px;color:#87867F;font-size:14px;">
-                    暫無採購數據<br>
-                    <small>請在 data/purchases/ 目錄下添加採購記錄 CSV</small>
+                    暂无采购数据<br>
+                    <small>请在 data/purchases/ 目录下添加采购记录 CSV</small>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- 手機底部 Tab -->
+    <!-- 手机底部 Tab -->
     <div class="mobile-tabs" id="mobile-tabs">
         <button class="active" data-tab="main" onclick="switchTab('main')">
-            <span class="tab-icon">🔧</span> 圖面＋清單
+            <span class="tab-icon">🔧</span> 图面＋清单
         </button>
         <button data-tab="stats" onclick="switchTab('stats')" id="stats-tab-btn">
-            <span class="tab-icon" id="stats-tab-icon">🔒</span> 採購統計
+            <span class="tab-icon" id="stats-tab-icon">🔒</span> 采购统计
         </button>
     </div>
 
     <!-- Toast -->
     <div class="toast" id="toast"></div>
 
-    <!-- 管理員密碼彈窗 -->
+    <!-- 管理员密码弹窗 -->
     <div class="pw-overlay" id="pw-overlay" style="display:none;">
         <div class="pw-dialog">
-            <h3>🔒 管理員驗證</h3>
-            <p>採購統計僅限管理員查看</p>
-            <input type="password" id="pw-input" placeholder="請輸入管理密碼" autocomplete="off">
-            <div class="pw-error" id="pw-error">密碼錯誤，請重試</div>
-            <button onclick="verifyAdmin()">確認</button>
+            <h3>🔒 管理员验证</h3>
+            <p>采购统计仅限管理员查看</p>
+            <input type="password" id="pw-input" placeholder="请输入管理密码" autocomplete="off">
+            <div class="pw-error" id="pw-error">密码错误，请重试</div>
+            <button onclick="verifyAdmin()">确认</button>
             <button class="pw-cancel" onclick="closePwModal()">取消</button>
         </div>
     </div>
 
-    <!-- Android mailto 備用方案 -->
+    <!-- Android mailto 备用方案 -->
     <div class="pw-overlay" id="mailto-fallback" style="display:none;">
         <div class="pw-dialog" style="width:360px;max-width:90vw;text-align:left;">
-            <h3 style="text-align:center;">發送詢價</h3>
-            <p style="text-align:center;margin:4px 0 12px;">請複製以下資訊寄送到：<br><strong id="fallback-email"></strong></p>
+            <h3 style="text-align:center;">发送询价</h3>
+            <p style="text-align:center;margin:4px 0 12px;">请复制以下资讯寄送到：<br><strong id="fallback-email"></strong></p>
             <textarea id="fallback-text" readonly
                 style="width:100%;height:140px;font-size:12px;border:1px solid #E6E3DA;border-radius:8px;padding:10px;resize:none;background:#FAF9F5;margin-bottom:12px;"></textarea>
             <button id="fallback-copy-btn" onclick="copyFallbackText()"
                 style="width:100%;padding:10px;border:none;border-radius:8px;background:#D97757;color:white;font-size:14px;font-weight:600;cursor:pointer;">
-                複製到剪貼簿
+                复制到剪贴簿
             </button>
-            <button class="pw-cancel" style="width:100%;margin-top:8px;" onclick="document.getElementById('mailto-fallback').style.display='none'">關閉</button>
+            <button class="pw-cancel" style="width:100%;margin-top:8px;" onclick="document.getElementById('mailto-fallback').style.display='none'">关闭</button>
         </div>
     </div>
 

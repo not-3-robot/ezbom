@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-EzBOM generate_stats.py 單元測試
+EzBOM generate_stats.py 单元测试
 
-執行方式：
+执行方式：
     cd EzBOM && python3 -m pytest data/test_generate_stats.py -v
     或
     cd EzBOM && python3 data/test_generate_stats.py
@@ -15,7 +15,7 @@ import tempfile
 import csv
 from pathlib import Path
 
-# 將 data/ 目錄加入路徑
+# 将 data/ 目录加入路径
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from generate_stats import compute_stats, load_purchases
@@ -26,29 +26,29 @@ from generate_stats import compute_stats, load_purchases
 # ============================================================
 
 SAMPLE_RECORDS = [
-    {"Date": "2025-01-15", "Customer": "永豐機械", "PartNumber": "400198",
-     "PartName": "C型扣環<R-47>", "Quantity": "20", "UnitPrice": "8.5",
+    {"Date": "2025-01-15", "Customer": "永丰机械", "PartNumber": "400198",
+     "PartName": "C型扣环<R-47>", "Quantity": "20", "UnitPrice": "8.5",
      "OrderNo": "PO-2025-001"},
-    {"Date": "2025-01-15", "Customer": "永豐機械", "PartNumber": "405563",
-     "PartName": "滾珠軸承<60052RS>", "Quantity": "10", "UnitPrice": "35.0",
+    {"Date": "2025-01-15", "Customer": "永丰机械", "PartNumber": "405563",
+     "PartName": "滚珠轴承<60052RS>", "Quantity": "10", "UnitPrice": "35.0",
      "OrderNo": "PO-2025-001"},
-    {"Date": "2025-02-03", "Customer": "冠杰工業", "PartNumber": "400198",
-     "PartName": "C型扣環<R-47>", "Quantity": "15", "UnitPrice": "8.5",
+    {"Date": "2025-02-03", "Customer": "冠杰工业", "PartNumber": "400198",
+     "PartName": "C型扣环<R-47>", "Quantity": "15", "UnitPrice": "8.5",
      "OrderNo": "PO-2025-008"},
     {"Date": "2025-02-20", "Customer": "大明重工", "PartNumber": "205600",
-     "PartName": "齒輪箱", "Quantity": "2", "UnitPrice": "8500.0",
+     "PartName": "齿轮箱", "Quantity": "2", "UnitPrice": "8500.0",
      "OrderNo": "PO-2025-015"},
-    {"Date": "2025-03-05", "Customer": "永豐機械", "PartNumber": "407736",
-     "PartName": "滾珠軸承<6205>", "Quantity": "10", "UnitPrice": "32.0",
+    {"Date": "2025-03-05", "Customer": "永丰机械", "PartNumber": "407736",
+     "PartName": "滚珠轴承<6205>", "Quantity": "10", "UnitPrice": "32.0",
      "OrderNo": "PO-2025-022"},
-    {"Date": "2025-04-01", "Customer": "冠杰工業", "PartNumber": "407736",
-     "PartName": "滾珠軸承<6205>", "Quantity": "10", "UnitPrice": "32.0",
+    {"Date": "2025-04-01", "Customer": "冠杰工业", "PartNumber": "407736",
+     "PartName": "滚珠轴承<6205>", "Quantity": "10", "UnitPrice": "32.0",
      "OrderNo": "PO-2025-035"},
 ]
 
 
 def make_temp_csv(records, filename="test.csv"):
-    """建立臨時 CSV 檔案供測試"""
+    """建立临时 CSV 档案供测试"""
     tmpdir = tempfile.mkdtemp()
     filepath = os.path.join(tmpdir, filename)
     if records:
@@ -58,7 +58,7 @@ def make_temp_csv(records, filename="test.csv"):
             writer.writeheader()
             writer.writerows(records)
     else:
-        # 空檔案（只有 header）
+        # 空档案（只有 header）
         with open(filepath, "w", newline="", encoding="utf-8") as f:
             f.write("Date,Customer,PartNumber,PartName,Quantity,UnitPrice,OrderNo\n")
     return tmpdir, filepath
@@ -69,10 +69,10 @@ def make_temp_csv(records, filename="test.csv"):
 # ============================================================
 
 def test_compute_stats_basic():
-    """基本統計計算：topParts、topCustomers、monthlyStats、hotParts"""
+    """基本统计计算：topParts、topCustomers、monthlyStats、hotParts"""
     stats = compute_stats(SAMPLE_RECORDS)
 
-    # topParts 應按 totalQty 降冪排列
+    # topParts 应按 totalQty 降幂排列
     assert len(stats["topParts"]) > 0
     assert stats["topParts"][0]["partNumber"] == "400198"  # 20+15=35 最多
     assert stats["topParts"][0]["totalQty"] == 35
@@ -81,20 +81,20 @@ def test_compute_stats_basic():
     # topCustomers
     assert len(stats["topCustomers"]) == 3
     customer_names = [c["name"] for c in stats["topCustomers"]]
-    assert "永豐機械" in customer_names
+    assert "永丰机械" in customer_names
 
-    # monthlyStats: 應該有 4 個月份
+    # monthlyStats: 应该有 4 个月份
     assert len(stats["monthlyStats"]) == 4
     months = [m["month"] for m in stats["monthlyStats"]]
     assert "2025-01" in months
     assert "2025-04" in months
 
-    # hotParts 應包含所有零件
-    assert len(stats["hotParts"]) == 4  # 4 個不同料號
+    # hotParts 应包含所有零件
+    assert len(stats["hotParts"]) == 4  # 4 个不同料号
 
 
 def test_compute_stats_empty():
-    """空記錄應回傳空結構"""
+    """空记录应回传空结构"""
     stats = compute_stats([])
     assert stats["topParts"] == []
     assert stats["topCustomers"] == []
@@ -103,9 +103,9 @@ def test_compute_stats_empty():
 
 
 def test_compute_stats_single_record():
-    """單筆記錄"""
-    record = [{"Date": "2025-06-01", "Customer": "測試客戶", "PartNumber": "TEST-001",
-               "PartName": "測試零件", "Quantity": "5", "UnitPrice": "100.0",
+    """单笔记录"""
+    record = [{"Date": "2025-06-01", "Customer": "测试客户", "PartNumber": "TEST-001",
+               "PartName": "测试零件", "Quantity": "5", "UnitPrice": "100.0",
                "OrderNo": "PO-001"}]
     stats = compute_stats(record)
 
@@ -114,7 +114,7 @@ def test_compute_stats_single_record():
     assert stats["topParts"][0]["totalQty"] == 5
 
     assert len(stats["topCustomers"]) == 1
-    assert stats["topCustomers"][0]["name"] == "測試客戶"
+    assert stats["topCustomers"][0]["name"] == "测试客户"
 
     assert len(stats["monthlyStats"]) == 1
     assert stats["monthlyStats"][0]["month"] == "2025-06"
@@ -123,16 +123,16 @@ def test_compute_stats_single_record():
 
 
 def test_compute_stats_quantity_aggregation():
-    """同料號多次出現應正確加總"""
+    """同料号多次出现应正确加总"""
     records = [
         {"Date": "2025-01-01", "Customer": "A", "PartNumber": "P001",
-         "PartName": "螺絲", "Quantity": "10", "UnitPrice": "1.0",
+         "PartName": "螺丝", "Quantity": "10", "UnitPrice": "1.0",
          "OrderNo": "O1"},
         {"Date": "2025-01-02", "Customer": "B", "PartNumber": "P001",
-         "PartName": "螺絲", "Quantity": "20", "UnitPrice": "1.0",
+         "PartName": "螺丝", "Quantity": "20", "UnitPrice": "1.0",
          "OrderNo": "O2"},
         {"Date": "2025-01-03", "Customer": "C", "PartNumber": "P001",
-         "PartName": "螺絲", "Quantity": "30", "UnitPrice": "1.0",
+         "PartName": "螺丝", "Quantity": "30", "UnitPrice": "1.0",
          "OrderNo": "O3"},
     ]
     stats = compute_stats(records)
@@ -141,7 +141,7 @@ def test_compute_stats_quantity_aggregation():
 
 
 def test_compute_stats_missing_fields():
-    """缺失選填欄位不應崩潰"""
+    """缺失选填栏位不应崩溃"""
     records = [
         {"Date": "2025-01-01", "PartNumber": "P001",
          "Quantity": "1", "UnitPrice": "10.0", "OrderNo": "O1"},
@@ -149,12 +149,12 @@ def test_compute_stats_missing_fields():
     ]
     stats = compute_stats(records)
     assert len(stats["topParts"]) == 1
-    # 未知客戶應被處理
+    # 未知客户应被处理
     assert len(stats["topCustomers"]) >= 1
 
 
 def test_compute_stats_invalid_quantity():
-    """無效數量應被安全跳過，不崩潰"""
+    """无效数量应被安全跳过，不崩溃"""
     records = [
         {"Date": "2025-01-01", "Customer": "A", "PartNumber": "P001",
          "PartName": "X", "Quantity": "not-a-number", "UnitPrice": "10.0",
@@ -164,14 +164,14 @@ def test_compute_stats_invalid_quantity():
          "OrderNo": "O2"},
     ]
     stats = compute_stats(records)
-    # 無效數量的零件應 qty=0，但不崩潰
+    # 无效数量的零件应 qty=0，但不崩溃
     assert len(stats["topParts"]) == 2
     p001 = next(p for p in stats["topParts"] if p["partNumber"] == "P001")
-    assert p001["totalQty"] == 0  # 無效數量被視為 0
+    assert p001["totalQty"] == 0  # 无效数量被视为 0
 
 
 def test_compute_stats_date_edge_cases():
-    """日期邊界測試：短日期格式"""
+    """日期边界测试：短日期格式"""
     records = [
         {"Date": "2025", "Customer": "A", "PartNumber": "P001",
          "PartName": "X", "Quantity": "1", "UnitPrice": "10.0",
@@ -181,16 +181,16 @@ def test_compute_stats_date_edge_cases():
          "OrderNo": "O2"},
     ]
     stats = compute_stats(records)
-    # 應正常處理，不回傳空列表（至少有一筆）
+    # 应正常处理，不回传空列表（至少有一笔）
     assert len(stats["monthlyStats"]) >= 1
 
 
 def test_hot_parts_frequency():
-    """hotParts 頻率分數應正確計算"""
+    """hotParts 频率分数应正确计算"""
     stats = compute_stats(SAMPLE_RECORDS)
     hot = stats["hotParts"]
 
-    # 400198 出現 2 次，2 個客戶 → frequency = 2*2 + 35*0.1 = 7.5
+    # 400198 出现 2 次，2 个客户 → frequency = 2*2 + 35*0.1 = 7.5
     part_400198 = next(p for p in hot if p["partNumber"] == "400198")
     assert part_400198["orderCount"] == 2
     assert len(part_400198["customers"]) == 2
@@ -199,7 +199,7 @@ def test_hot_parts_frequency():
 
 
 def test_hot_parts_sorting():
-    """hotParts 應按 frequency 降冪排列"""
+    """hotParts 应按 frequency 降幂排列"""
     stats = compute_stats(SAMPLE_RECORDS)
     hot = stats["hotParts"]
     for i in range(len(hot) - 1):
@@ -207,8 +207,8 @@ def test_hot_parts_sorting():
 
 
 def test_top_parts_limit():
-    """topParts 最多 10 筆"""
-    # 建立 15 個不同料號
+    """topParts 最多 10 笔"""
+    # 建立 15 个不同料号
     records = []
     for i in range(15):
         records.append({
@@ -221,7 +221,7 @@ def test_top_parts_limit():
 
 
 def test_monthly_stats_sorting():
-    """monthlyStats 應按月份升冪排列"""
+    """monthlyStats 应按月份升幂排列"""
     stats = compute_stats(SAMPLE_RECORDS)
     months = [m["month"] for m in stats["monthlyStats"]]
     assert months == sorted(months)
@@ -232,10 +232,10 @@ def test_monthly_stats_sorting():
 # ============================================================
 
 def test_load_purchases_from_dir():
-    """從目錄載入採購記錄"""
+    """从目录载入采购记录"""
     tmpdir, filepath = make_temp_csv(SAMPLE_RECORDS, "p-type.csv")
-    # 需要暫時覆蓋 PURCHASES_DIR（此測試僅驗證邏輯）
-    # 由於 load_purchases 使用全域 PURCHASES_DIR，這裡直接測試 CSV 讀取邏輯
+    # 需要暂时覆盖 PURCHASES_DIR（此测试仅验证逻辑）
+    # 由于 load_purchases 使用全域 PURCHASES_DIR，这里直接测试 CSV 读取逻辑
     import csv as csv_module
     with open(filepath, newline="", encoding="utf-8") as f:
         reader = csv_module.DictReader(f)
@@ -245,18 +245,18 @@ def test_load_purchases_from_dir():
 
 
 def test_load_purchases_empty_dir():
-    """空目錄不應崩潰"""
+    """空目录不应崩溃"""
     tmpdir, _ = make_temp_csv(SAMPLE_RECORDS)
-    # 建立一個空的 purchases 目錄
+    # 建立一个空的 purchases 目录
     purchases_dir = os.path.join(tmpdir, "empty_purchases")
     os.makedirs(purchases_dir, exist_ok=True)
-    # 不應該有任何 CSV 檔案
+    # 不应该有任何 CSV 档案
     csv_files = list(Path(purchases_dir).glob("*.csv"))
     assert len(csv_files) == 0
 
 
 # ============================================================
-# 手動執行（不使用 pytest 時）
+# 手动执行（不使用 pytest 时）
 # ============================================================
 if __name__ == "__main__":
     import traceback
@@ -291,5 +291,5 @@ if __name__ == "__main__":
             failed += 1
 
     print(f"\n{'='*50}")
-    print(f"結果: {passed} passed, {failed} failed, {len(tests)} total")
+    print(f"结果: {passed} passed, {failed} failed, {len(tests)} total")
     sys.exit(0 if failed == 0 else 1)

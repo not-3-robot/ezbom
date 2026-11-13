@@ -8,9 +8,9 @@ QR_FILE="$HOME/Downloads/EzBOM-qrcode.png"
 
 cd "$DIR"
 
-# 資產版本號：每次部署自動 stamp viewer.css / viewer.js 的 ?v=，
-# 否則 GitHub Pages 的快取會讓使用者續拿舊 CSS/JS（實測改樣式後
-# 瀏覽器仍套用舊值，伺服器卻已在送新檔）。
+# 资产版本号：每次部署自动 stamp viewer.css / viewer.js 的 ?v=，
+# 否则 GitHub Pages 的快取会让使用者续拿旧 CSS/JS（实测改样式后
+# 浏览器仍套用旧值，伺服器却已在送新档）。
 STAMP="$(date '+%Y%m%d%H%M%S')"
 sed -i '' -E "s/(viewer\.(css|js))\?v=[A-Za-z0-9]+/\1?v=${STAMP}/g" viewer.html
 echo "🏷  asset version: ${STAMP}"

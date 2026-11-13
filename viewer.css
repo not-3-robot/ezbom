@@ -1,6 +1,6 @@
 /* ============================================================
-   EzBOM Viewer — 樣式表
-   從 viewer.html 提取，獨立維護
+   EzBOM Viewer — 样式表
+   从 viewer.html 提取，独立维护
    ============================================================ */
 
 /* ===== 全局重置 ===== */
@@ -12,7 +12,7 @@ body {
     height: 100vh;
 }
 
-/* ===== 載入畫面 ===== */
+/* ===== 载入画面 ===== */
 #loading {
     position: fixed; inset: 0; z-index: 9999;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -24,7 +24,7 @@ body {
 @keyframes spin { to { transform: rotate(360deg); } }
 #loading-error { color: #D97757; margin-top: 12px; display: none; font-size: 14px; }
 
-/* ===== 頂部欄 ===== */
+/* ===== 顶部栏 ===== */
 .topbar {
     display: flex; align-items: center; padding: 8px 16px;
     background: white; border-bottom: 1px solid #E6E3DA;
@@ -38,7 +38,7 @@ body {
 .topbar .back-btn:hover { background: #F0EEE6; }
 .topbar h1 { font-size: 16px; color: #141413; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-/* ===== 主容器（桌面左右分欄） ===== */
+/* ===== 主容器（桌面左右分栏） ===== */
 .container { display: flex; height: calc(100vh - 45px); }
 
 /* ===== SVG 面板 ===== */
@@ -58,7 +58,7 @@ body {
     width: auto; height: auto;
 }
 
-/* SVG 縮放控制 */
+/* SVG 缩放控制 */
 .svg-zoom-controls {
     position: absolute; bottom: 12px; right: 12px;
     display: flex; flex-direction: column; gap: 4px; z-index: 500;
@@ -72,7 +72,7 @@ body {
 .svg-zoom-controls button:hover { background: #E3DACC; }
 .svg-zoom-controls button:active { transform: scale(0.95); }
 
-/* ===== 零件標籤 ===== */
+/* ===== 零件标签 ===== */
 .part-label {
     position: absolute; pointer-events: none; z-index: 1000;
     background: rgba(217, 119, 87, 0.95); color: white;
@@ -84,7 +84,7 @@ body {
 }
 .part-label.show { opacity: 1; }
 
-/* ===== SVG 互動（純CSS，桌面hover + 手機touch） ===== */
+/* ===== SVG 互动（纯CSS，桌面hover + 手机touch） ===== */
 .svg-part {
     cursor: pointer;
     transition: filter 0.12s ease, transform 0.12s ease;
@@ -93,10 +93,10 @@ body {
     will-change: transform;
 }
 /* 桌面 hover — 使用 drop-shadow。
-   .hit-resolved 模式下由 JS 以「最小零件優先」解析命中後加 .hovered：
-   群組按 P 號升序繪製，大零件填色區會蓋在小零件上，原生 :hover 會
-   亮到錯的那一件，所以解析生效時改用 .hovered，並保留 :hover 當
-   JS 未執行時的降級路徑。 */
+   .hit-resolved 模式下由 JS 以「最小零件优先」解析命中后加 .hovered：
+   群组按 P 号升序绘制，大零件填色区会盖在小零件上，原生 :hover 会
+   亮到错的那一件，所以解析生效时改用 .hovered，并保留 :hover 当
+   JS 未执行时的降级路径。 */
 svg:not(.hit-resolved) .svg-part:hover,
 .svg-part.hovered {
     filter: drop-shadow(0 0 10px rgba(217, 119, 87, 0.6));
@@ -116,7 +116,7 @@ svg:not(.hit-resolved) .svg-part:hover line,
     stroke-width: calc(var(--ez-stroke, 2) * 1.7px) !important;
     fill: rgba(217, 119, 87, 0.1) !important;
 }
-/* 選中 */
+/* 选中 */
 .svg-part.selected {
     filter: drop-shadow(0 0 12px rgba(217, 119, 87, 0.8));
     transform: scale(1.1);
@@ -130,7 +130,7 @@ svg:not(.hit-resolved) .svg-part:hover line,
     stroke-width: calc(var(--ez-stroke, 2) * 1.7px) !important;
     fill: rgba(217, 119, 87, 0.1) !important;
 }
-/* SVG 零件高亮（來自 BOM 搜尋） */
+/* SVG 零件高亮（来自 BOM 搜寻） */
 .svg-part.search-highlight {
     filter: drop-shadow(0 0 14px rgba(217, 119, 87, 0.9));
     animation: pulse-highlight 0.8s ease-in-out;
@@ -149,7 +149,7 @@ svg:not(.hit-resolved) .svg-part:hover line,
     50% { transform: scale(1.15); }
 }
 
-/* 手機點擊高亮 — 不使用 drop-shadow (iOS Safari 效能問題) */
+/* 手机点击高亮 — 不使用 drop-shadow (iOS Safari 效能问题) */
 .svg-part.tap-highlight {
     transform: scale(1.1);
 }
@@ -163,7 +163,7 @@ svg:not(.hit-resolved) .svg-part:hover line,
     fill: rgba(217, 119, 87, 0.1) !important;
 }
 
-/* 行動版：全局禁用 SVG drop-shadow 以提升效能 */
+/* 行动版：全局禁用 SVG drop-shadow 以提升效能 */
 @media (max-width: 768px) {
     .svg-part:hover,
     .svg-part.hovered,
@@ -184,7 +184,7 @@ svg:not(.hit-resolved) .svg-part:hover line,
     }
 }
 
-/* ===== BOM 面板（桌面右側） ===== */
+/* ===== BOM 面板（桌面右侧） ===== */
 .bom-panel {
     width: 380px; padding: 16px; background: white;
     overflow-y: auto; display: flex; flex-direction: column; gap: 16px;
@@ -192,12 +192,12 @@ svg:not(.hit-resolved) .svg-part:hover line,
 }
 .bom-panel h2 { font-size: 16px; color: #141413; }
 
-/* 統計 */
+/* 统计 */
 .stats-summary { background: #F0EEE6; padding: 12px; border-radius: 8px; }
 .stats-item { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; border-bottom: 1px solid #E6E3DA; }
 .stats-item:last-child { border-bottom: none; }
 
-/* 已選擇清單 */
+/* 已选择清单 */
 .selected-items { max-height: 180px; overflow-y: auto; }
 .selected-item {
     display: flex; align-items: center; gap: 6px;
@@ -227,7 +227,7 @@ svg:not(.hit-resolved) .svg-part:hover line,
 .email-btn:disabled { background: #ccc; cursor: not-allowed; }
 #copy-btn:disabled { color: #ccc; cursor: not-allowed; border-color: #E6E3DA; }
 
-/* 搜索 + 工具欄 */
+/* 搜索 + 工具栏 */
 .search-box {
     width: 100%; padding: 8px 12px; border: 1px solid #E6E3DA; border-radius: 6px;
     font-size: 13px; background: #FAF9F5; outline: none;
@@ -264,7 +264,7 @@ svg:not(.hit-resolved) .svg-part:hover line,
 .part-qty { font-size: 11px; color: #87867F; }
 .bom-item.selected .part-qty { color: rgba(255,255,255,0.7); }
 
-/* ===== 手機底部 Tab 切換 ===== */
+/* ===== 手机底部 Tab 切换 ===== */
 .mobile-tabs { display: none; }
 
 /* ===== Toast ===== */
@@ -275,7 +275,7 @@ svg:not(.hit-resolved) .svg-part:hover line,
 }
 .toast.show { opacity: 1; }
 
-/* ===== 滾動條 ===== */
+/* ===== 滚动条 ===== */
 .bom-list-container::-webkit-scrollbar,
 .selected-items::-webkit-scrollbar { width: 5px; }
 .bom-list-container::-webkit-scrollbar-track,
@@ -283,7 +283,7 @@ svg:not(.hit-resolved) .svg-part:hover line,
 .bom-list-container::-webkit-scrollbar-thumb,
 .selected-items::-webkit-scrollbar-thumb { background: #D97757; border-radius: 3px; }
 
-/* ===== 行動版：<= 768px ===== */
+/* ===== 行动版：<= 768px ===== */
 @media (max-width: 768px) {
     body { overflow: auto; }
     .container {
@@ -311,7 +311,7 @@ svg:not(.hit-resolved) .svg-part:hover line,
     }
     .bom-panel.active { display: flex; }
     .bom-list-container { max-height: none; }
-    /* 選取自動捲動時避开固定底部 Tab 列與頂欄 */
+    /* 选取自动卷动时避开固定底部 Tab 列与顶栏 */
     .bom-item { scroll-margin-bottom: 70px; scroll-margin-top: 60px; }
 
     /* 底部 Tab */
@@ -342,14 +342,14 @@ svg:not(.hit-resolved) .svg-part:hover line,
     .svg-zoom-controls button { width: 28px; height: 28px; font-size: 14px; }
 }
 
-/* ===== 小手機 (<= 480px) ===== */
+/* ===== 小手机 (<= 480px) ===== */
 @media (max-width: 480px) {
     .svg-panel { height: 42vh; min-height: 260px; }
     .bom-panel { padding: 8px; }
     .bom-item { padding: 8px 10px; }
 }
 
-/* ===== 手機橫屏 ===== */
+/* ===== 手机横屏 ===== */
 @media (max-width: 900px) and (orientation: landscape) {
     .svg-panel {
         height: 55vh;
@@ -365,7 +365,7 @@ svg:not(.hit-resolved) .svg-part:hover line,
     .mobile-tabs button .tab-icon { font-size: 14px; }
 }
 
-/* ===== 管理員密碼彈窗 ===== */
+/* ===== 管理员密码弹窗 ===== */
 .pw-overlay {
     position: fixed; inset: 0; z-index: 10000;
     background: rgba(20,20,19,0.5); display: flex;
@@ -399,16 +399,16 @@ svg:not(.hit-resolved) .svg-part:hover line,
 .pw-dialog .pw-cancel:hover { background: #F0EEE6; }
 
 /* ============================================================
-   視圖控制（2026-11-13 極簡化）：dock 全數移除，
-   縮放走直接手勢，僅留一顆浮動旋轉鈕（90° 循環）。
+   视图控制（2026-11-13 极简化）：dock 全数移除，
+   缩放走直接手势，仅留一颗浮动旋转钮（90° 循环）。
    ============================================================ */
 .svg-container.ez-moved { cursor: grab; }
 .svg-container.ez-moved:active { cursor: grabbing; }
 .svg-container svg { transition: transform .18s cubic-bezier(.3,.8,.3,1); }
-/* ===== 叢集級高亮 =====
-   歸組會把鄰件吸進同一群組（P34 實測 1071 子路徑／10 叢集／跨全圖 80%），
-   整組套 .selected 會把散在全圖的同料號實例一起亮起＝「選一件連帶別件」。
-   叢集模式啟用時，關掉群組級著色，改由覆蓋層只畫目標叢集。 */
+/* ===== 丛集级高亮 =====
+   归组会把邻件吸进同一群组（P34 实测 1071 子路径／10 丛集／跨全图 80%），
+   整组套 .selected 会把散在全图的同料号实例一起亮起＝「选一件连带别件」。
+   丛集模式启用时，关掉群组级著色，改由覆盖层只画目标丛集。 */
 svg.ez-cluster-sel .svg-part.selected,
 svg.ez-cluster-sel .svg-part.hovered {
     filter: none;
@@ -437,9 +437,9 @@ svg.ez-cluster-sel .svg-part.hovered line {
     transform-box: fill-box;
     transform-origin: center center;
 }
-/* 特異性必須壓過 .svg-container svg path（基礎線寬規則），
-   否則 ×1.9/×1.6 加粗會被吞掉＝高亮跟黑線一樣粗、看不出選取效果
-   （2026-11-13 使用者回報「紅色放大效果沒有了」的根因之一） */
+/* 特异性必须压过 .svg-container svg path（基础线宽规则），
+   否则 ×1.9/×1.6 加粗会被吞掉＝高亮跟黑线一样粗、看不出选取效果
+   （2026-11-13 使用者回报「红色放大效果没有了」的根因之一） */
 .svg-container svg .ez-sel-path {
     stroke-width: calc(var(--ez-stroke, 2) * 1.9px);
     filter: drop-shadow(0 0 6px rgba(217,119,87,.75));
@@ -453,8 +453,8 @@ svg.ez-cluster-sel .svg-part.hovered line {
     .svg-container svg .ez-sel-path { filter: none; }
 }
 
-/* 線寬單一來源：--ez-stroke 由 vApplyStroke 換算成使用者單位後寫在 svg 上，
-   所有形狀繼承；highlight 規則用 !important 覆寫成倍數，不受影響。 */
+/* 线宽单一来源：--ez-stroke 由 vApplyStroke 换算成使用者单位后写在 svg 上，
+   所有形状继承；highlight 规则用 !important 覆写成倍数，不受影响。 */
 .svg-container svg path,
 .svg-container svg circle,
 .svg-container svg rect,
@@ -466,7 +466,7 @@ svg.ez-cluster-sel .svg-part.hovered line {
     vector-effect: none;
 }
 
-/* 浮動旋轉鈕：唯一常駐視圖控制，掛在圖面右上角 */
+/* 浮动旋转钮：唯一常驻视图控制，挂在图面右上角 */
 .ez-rot {
     position: absolute; top: 10px; right: 10px; z-index: 620;
     width: 44px; height: 44px; padding: 0;

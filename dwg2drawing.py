@@ -1,31 +1,31 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""DWG → EzBOM drawing.svg（2026-10-09 定版流程，見 Obsidian DWG轉EzBOM流程.md）
+"""DWG → EzBOM drawing.svg（2026-10-09 定版流程，见 Obsidian DWG转EzBOM流程.md）
 
 用法:
     python3 dwg2drawing.py <in.dwg> <out.svg> [bom.csv] [--rotate auto|0|90|180|270]
-                          [--overrides overrides.json --key 相對路徑] [--stroke 數值]
+                          [--overrides overrides.json --key 相对路径] [--stroke 数值]
 
---stroke 覆寫筆畫寬（預設＝外框對角線×0.002）。細齒圖（齒輪/軸承齒距小於
-預設筆畫）會糊成實心黑塊，改細筆畫還原齒牙，如 鏈條/160/齒輪箱 用 0.15。
+--stroke 覆写笔画宽（预设＝外框对角线×0.002）。细齿图（齿轮/轴承齿距小于
+预设笔画）会糊成实心黑块，改细笔画还原齿牙，如 链条/160/齿轮箱 用 0.15。
 
---rotate 預設 auto：直式（高>寬）自動順時針轉 90° 成橫式，與 p_type 參考稿
-（p_type.dxf.svg，8400×5940）方向一致；橫式不動。p_type 橫式故回歸輸出不變。
+--rotate 预设 auto：直式（高>宽）自动顺时针转 90° 成横式，与 p_type 参考稿
+（p_type.dxf.svg，8400×5940）方向一致；横式不动。p_type 横式故回归输出不变。
 
---overrides：放大檢視.html「修正模式」記錄的人工歸組修正表（JSON），
-  以 --key（相對於 產品手冊46 的路徑去副檔名，如 鏈條/190/超短小車）取用。
-  幾何規則分不出來的吃線錯誤（兩條引線端點落在同一疊線上）由此兜底。
+--overrides：放大检视.html「修正模式」记录的人工归组修正表（JSON），
+  以 --key（相对于 产品手册46 的路径去副档名，如 链条/190/超短小车）取用。
+  几何规则分不出来的吃线错误（两条引线端点落在同一叠线上）由此兜底。
 
-模式自動選擇:
-  1. layer   — 存在 ^P\\d+- 圖層：按圖層分組（標籤=圖層名，與手工版同源），
-               丟棄全部非 P 層（p_type 實測：層5=引線、層7=串聯中心線+氣球、0/8=標題）。
-  2. balloon — 無 P 層，但有 CIRCLE+數字 TEXT 成對：氣球歸組（手冊批同款 assign），
-               丟棄配對圓與貼圓緣引線（K型齿轮箱 路線）。
-bom.csv 可選：提供時做 P-id 交叉比對（注意 bom 本身無法從 DWG 產出，
-料號/品名/數量只能來自清冊或 ERP）。
+模式自动选择:
+  1. layer   — 存在 ^P\\d+- 图层：按图层分组（标签=图层名，与手工版同源），
+               丢弃全部非 P 层（p_type 实测：层5=引线、层7=串联中心线+气球、0/8=标题）。
+  2. balloon — 无 P 层，但有 CIRCLE+数字 TEXT 成对：气球归组（手册批同款 assign），
+               丢弃配对圆与贴圆缘引线（K型齿轮箱 路线）。
+bom.csv 可选：提供时做 P-id 交叉比对（注意 bom 本身无法从 DWG 产出，
+料号/品名/数量只能来自清册或 ERP）。
 
-依賴：BOM樹狀圖/_build/dwg_extract.py（convert_dwg / collect_segments /
-extract 分組碼；橢圓旋轉與 bulge 修正皆在該檔，2026-10-09）。
+依赖：BOM树状图/_build/dwg_extract.py（convert_dwg / collect_segments /
+extract 分组码；椭圆旋转与 bulge 修正皆在该档，2026-10-09）。
 """
 import csv
 import json
@@ -35,7 +35,7 @@ import re
 import sys
 
 REPO = os.path.dirname(os.path.abspath(__file__))
-EXTRACT_DIR = "/Users/zone/Documents/Study/B0M研究/BOM樹狀圖/_build"
+EXTRACT_DIR = "/Users/zone/Documents/Study/B0M研究/BOM树状图/_build"
 sys.path.insert(0, EXTRACT_DIR)
 
 from dwg_extract import (convert_dwg, collect_segments, assign_segments,
@@ -45,9 +45,9 @@ import ezdxf
 
 LAYER_RE = re.compile(r"^P(\d+)-")
 NUM_RE = re.compile(r"^\d+$")
-# P-id 契約（權威定義在 _audit/audit_drawing.py 的 LBL，兩端必須同語義）：
-#   ^P(\d+)(?:$|-)  — "P01"（無 dash）與 "P01-xxx"（有 dash）都算同一零件 P01。
-# JS 端對應：viewer.js 的 /^P\d+$/（無 dash 分支）＋ indexOf('-') 截斷（有 dash）。
+# P-id 契约（权威定义在 _audit/audit_drawing.py 的 LBL，两端必须同语义）：
+#   ^P(\d+)(?:$|-)  — "P01"（无 dash）与 "P01-xxx"（有 dash）都算同一零件 P01。
+# JS 端对应：viewer.js 的 /^P\d+$/（无 dash 分支）＋ indexOf('-') 截断（有 dash）。
 PID_RE = re.compile(r"^P(\d+)(?:$|-)")
 
 
@@ -61,12 +61,12 @@ def flip(segs):
 
 
 def flip_rot(segs, deg):
-    """CAD y-up → SVG y-down，再把畫面旋轉 deg 度（順時針）。
+    """CAD y-up → SVG y-down，再把画面旋转 deg 度（顺时针）。
 
-    SVG 座標 y 向下，順時針 90° 的變換是 (x, y) → (-y, x)：
-    原本在左上角的內容會跑到右上角。K型 DWG 在 WCS 裡是直式
-    （viewBox 1863×2594），p_type 參考稿是橫式（8400×5940），
-    使用者 2026-10-10 裁定直式圖一律轉正成橫式。
+    SVG 座标 y 向下，顺时针 90° 的变换是 (x, y) → (-y, x)：
+    原本在左上角的内容会跑到右上角。K型 DWG 在 WCS 里是直式
+    （viewBox 1863×2594），p_type 参考稿是横式（8400×5940），
+    使用者 2026-10-10 裁定直式图一律转正成横式。
     """
     out = flip(segs)
     if deg == 90:
@@ -83,12 +83,12 @@ def read_bom_ids(path):
     if path and os.path.exists(path):
         with open(path, encoding="utf-8") as fh:
             for row in csv.DictReader(fh):
-                ids.add((row.get("Id") or row.get("標籤ID") or "").strip())
+                ids.add((row.get("Id") or row.get("标签ID") or "").strip())
     return ids
 
 
 def read_bom_names(path):
-    """Id → 品名（bom.csv 的 Name 欄）。"""
+    """Id → 品名（bom.csv 的 Name 栏）。"""
     out = {}
     if path and os.path.exists(path):
         with open(path, encoding="utf-8") as fh:
@@ -101,7 +101,7 @@ def read_bom_names(path):
 
 
 def fix_mojibake(s):
-    """UTF-8 位元組被當 Latin-1 再存一次的救援（p_type 標籤的病灶）。"""
+    """UTF-8 位元组被当 Latin-1 再存一次的救援（p_type 标签的病灶）。"""
     if not s or not re.search(r"[ÃÂåæçèéê][\u0080-¿]", s):
         return s
     try:
@@ -111,7 +111,7 @@ def fix_mojibake(s):
 
 
 def layer_mode(doc, msp):
-    """P 圖層白名單：分組=圖層名，非 P 層（引線/中心線/氣球/標題）全丟。"""
+    """P 图层白名单：分组=图层名，非 P 层（引线/中心线/气球/标题）全丢。"""
     buckets = {}
     for e in msp:
         L = e.dxf.layer if e.dxf.hasattr("layer") else "0"
@@ -122,24 +122,24 @@ def layer_mode(doc, msp):
         segs = collect_segments(doc, entities=ents)
         if segs:
             groups[L] = segs
-    labels = {L: L for L in groups}          # 標籤直接用圖層名
+    labels = {L: L for L in groups}          # 标签直接用图层名
     return groups, labels, {"dropped_layers": True}
 
 
 # ── balloon_mode 拆分（2026-10-24）────────────────────────────────────────
-# 原 475 行單函式（8 代偵測策略疊加、14 個巢狀 def、block_mode 5 處分流）
-# 拆成：純幾何 helper（_bm_*）＋ 8 個策略函式 ＋ balloon_mode 編排器。
-# 行為零變化：47 張全量逐位元組回歸一致（/tmp/balloon_regen harness）。
-# 各策略的歷史註解與實測標定數據隨代碼遷移，未改寫。
-# 規則：所有迴圈形狀/迭代順序/常量原樣保留——包括看似可優化的部分
-# （per-text 重 query、O(n²) 圈搜尋、LIFO pending.pop），它們都是
-# 逐位元組回歸驗證過的行為的一部分。
+# 原 475 行单函式（8 代侦测策略叠加、14 个巢状 def、block_mode 5 处分流）
+# 拆成：纯几何 helper（_bm_*）＋ 8 个策略函式 ＋ balloon_mode 编排器。
+# 行为零变化：47 张全量逐位元组回归一致（/tmp/balloon_regen harness）。
+# 各策略的历史注解与实测标定数据随代码迁移，未改写。
+# 规则：所有回圈形状/迭代顺序/常量原样保留——包括看似可优化的部分
+# （per-text 重 query、O(n²) 圈搜寻、LIFO pending.pop），它们都是
+# 逐位元组回归验证过的行为的一部分。
 
 _BM_DASH_RE = re.compile(r"ISO12|PHANTOM|CENTER|DASHED|ADJPHANT|DOT", re.I)
 
 
 def _bm_pts_of(e, n=8):
-    """實體取樣點（crowd/nonline_touch 共用的幾何離散化）。"""
+    """实体取样点（crowd/nonline_touch 共用的几何离散化）。"""
     t = e.dxftype()
     if t == "ELLIPSE":
         c, maj = e.dxf.center, e.dxf.major_axis
@@ -192,7 +192,7 @@ def _bm_geom_sweep(e):
 
 
 def _bm_linetype_of(e, doc, cache):
-    """實體線型：自身非 BYLAYER 用自身，否則查圖層（cache 為 {層名: 線型}）。"""
+    """实体线型：自身非 BYLAYER 用自身，否则查图层（cache 为 {层名: 线型}）。"""
     if e.dxf.hasattr("linetype") and e.dxf.linetype not in ("BYLAYER", "ByLayer"):
         return e.dxf.linetype
     L = e.dxf.layer if e.dxf.hasattr("layer") else "0"
@@ -205,7 +205,7 @@ def _bm_linetype_of(e, doc, cache):
 
 
 def _bm_d_axis(px, py, axis_lines):
-    """點到最近組立軸線的距離。"""
+    """点到最近组立轴线的距离。"""
     best = 1e18
     for L in axis_lines:
         ax, ay = L.dxf.start.x, L.dxf.start.y
@@ -251,7 +251,7 @@ def _bm_has_balloon_leader(ls, balloons):
 
 
 def _bm_family_of(cx, cy, msp, lines):
-    """候選頭的同家族幾何（同心圈＋自家引線），crowd 量測時排除用。"""
+    """候选头的同家族几何（同心圈＋自家引线），crowd 量测时排除用。"""
     drop = set()
     for e in msp:
         if e.dxftype() in ("ELLIPSE", "CIRCLE", "ARC") and e.dxf.hasattr("center"):
@@ -290,7 +290,7 @@ def _bm_nonline_touch(px, py, exclude, msp):
 
 
 def _bm_is_leader(e, balloons, extra_leaders):
-    """classic 模式引線判定：一端貼氣球圈心 ≤1.3r（insert 量測，舊制）。"""
+    """classic 模式引线判定：一端贴气球圈心 ≤1.3r（insert 量测，旧制）。"""
     if e.dxftype() != "LINE":
         return False
     if id(e) in extra_leaders:
@@ -303,18 +303,18 @@ def _bm_is_leader(e, balloons, extra_leaders):
 
 
 def _bm_edge_leader(e, balloons):
-    """block 模式引線判定（2026-10-19）。
+    """block 模式引线判定（2026-10-19）。
 
-    誠岱手冊批的氣球＝件號 block：引線是獨立 LINE，一端落在圓周上、他端
-    指向零件。4 支代表圖實測判別力完全分離：「一端 |d−圈心 r| ≤ 0.3r 且
-    他端 ≥ 2r」命中 131/139、30/30、84/84、85/82，100% 落在專屬引線圖層
-    （層4/5），層0 零件線零命中。tol 0.15r↔0.30r 命中數完全相同＝閾值不敏感。
-    取代 insert 量測的舊 is_leader（量測基準錯，見 _bm_collect_block_balloons
-    真圈心註解）。
+    诚岱手册批的气球＝件号 block：引线是独立 LINE，一端落在圆周上、他端
+    指向零件。4 支代表图实测判别力完全分离：「一端 |d−圈心 r| ≤ 0.3r 且
+    他端 ≥ 2r」命中 131/139、30/30、84/84、85/82，100% 落在专属引线图层
+    （层4/5），层0 零件线零命中。tol 0.15r↔0.30r 命中数完全相同＝阈值不敏感。
+    取代 insert 量测的旧 is_leader（量测基准错，见 _bm_collect_block_balloons
+    真圈心注解）。
 
-    命中回傳 (tip_x, tip_y, 氣球索引)：遠端點＝引線指向零件的那一頭，
-    歸組（assign_components）靠它認領分量。tuple 恆 truthy，舊布林用法
-    不受影響。迭代順序＝氣球外層（與 10/20 原型一致，保證輸出同位）。
+    命中回传 (tip_x, tip_y, 气球索引)：远端点＝引线指向零件的那一头，
+    归组（assign_components）靠它认领分量。tuple 恒 truthy，旧布林用法
+    不受影响。迭代顺序＝气球外层（与 10/20 原型一致，保证输出同位）。
     """
     if e.dxftype() != "LINE":
         return None
@@ -328,7 +328,7 @@ def _bm_edge_leader(e, balloons):
 
 
 def _bm_pair_circle_text(texts, circles):
-    """策略①（基底）：CIRCLE＋數字 TEXT 配對當氣球。回傳 (balloons, paired)。"""
+    """策略①（基底）：CIRCLE＋数字 TEXT 配对当气球。回传 (balloons, paired)。"""
     balloons, paired = [], set()
     for t in texts:
         tx, ty = t.dxf.insert.x, t.dxf.insert.y
@@ -346,11 +346,11 @@ def _bm_pair_circle_text(texts, circles):
 
 
 def _bm_calibrate_radius(circles, paired):
-    """策略②：自動標定氣球半徑基準。回傳 (r_med, ARC_R_LO, ARC_R_HI)。
+    """策略②：自动标定气球半径基准。回传 (r_med, ARC_R_LO, ARC_R_HI)。
 
-    下面三個閾值本來是照 K型 一張圖量出來寫死的（d_axis>60 / crowd≤1 /
-    ARC r∈[24,30]），換圖要手動複驗。改成從「本圖已配對的編號氣球」推導，
-    換圖自動跟著走。K型 標定結果 = 原硬編碼值（驗收：輸出須逐位元組一致）。
+    下面三个阈值本来是照 K型 一张图量出来写死的（d_axis>60 / crowd≤1 /
+    ARC r∈[24,30]），换图要手动复验。改成从「本图已配对的编号气球」推导，
+    换图自动跟著走。K型 标定结果 = 原硬编码值（验收：输出须逐位元组一致）。
     """
     paired_r = sorted(circles[i].dxf.radius for i in paired)
     r_med = paired_r[len(paired_r) // 2] if paired_r else 27.0
@@ -359,11 +359,11 @@ def _bm_calibrate_radius(circles, paired):
 
 
 def _bm_add_arc_balloons(texts, msp, balloons, arc_r_lo, arc_r_hi):
-    """策略③（K型波，165bcac）：ARC 型氣球撿回。balloons 原地 append。
+    """策略③（K型波，165bcac）：ARC 型气球捡回。balloons 原地 append。
 
-    氣球不一定畫成 CIRCLE：K型 氣球#16 畫成 ARC r=27、sweep=355°（數字 16 就在
-    圈內），配對只認 CIRCLE 所以漏配——流程筆記記的「文字16 無圈」其實是偵測缺口，
-    不是源圖缺口。sweep≥270 才算整圈（同半徑的零件弧 sweep 只有 13~24°，不會誤配）。
+    气球不一定画成 CIRCLE：K型 气球#16 画成 ARC r=27、sweep=355°（数字 16 就在
+    圈内），配对只认 CIRCLE 所以漏配——流程笔记记的「文字16 无圈」其实是侦测缺口，
+    不是源图缺口。sweep≥270 才算整圈（同半径的零件弧 sweep 只有 13~24°，不会误配）。
     """
     balloon_arc_ids = set()
     for t in texts:
@@ -388,12 +388,12 @@ def _bm_add_arc_balloons(texts, msp, balloons, arc_r_lo, arc_r_hi):
 
 
 def _bm_collect_block_balloons(msp):
-    """策略④（誠岱46批波）：件號 block ATTRIB 氣球。回傳 balloons（可為空）。
+    """策略④（诚岱46批波）：件号 block ATTRIB 气球。回传 balloons（可为空）。
 
-    誠岱手冊 DWG 的編號不是 TEXT+CIRCLE，而是「件號」block 的 ATTRIB 屬性
-    （同 dwg_extract.extract_balloons 邏輯，2026-10-10 實測這批唯一的氣球
-    形式）。CIRCLE+TEXT/ARC 配對都落空才走這條——兩條路互斥，p_type/K型
-    的回歸輸出因此逐位元組不變。
+    诚岱手册 DWG 的编号不是 TEXT+CIRCLE，而是「件号」block 的 ATTRIB 属性
+    （同 dwg_extract.extract_balloons 逻辑，2026-10-10 实测这批唯一的气球
+    形式）。CIRCLE+TEXT/ARC 配对都落空才走这条——两条路互斥，p_type/K型
+    的回归输出因此逐位元组不变。
     """
     balloons = []
     for e in msp:
@@ -407,8 +407,8 @@ def _bm_collect_block_balloons(msp):
                 break
         if n is None:
             continue
-        # 半徑取 block 內部 CIRCLE 最大者（引線/閘門量測都要半徑）；
-        # 內部無圈退回 27（K型 編號圈實測半徑，只當尺度參考）。
+        # 半径取 block 内部 CIRCLE 最大者（引线/闸门量测都要半径）；
+        # 内部无圈退回 27（K型 编号圈实测半径，只当尺度参考）。
         r = 0.0
         cx = cy = None
         try:
@@ -418,9 +418,9 @@ def _bm_collect_block_balloons(msp):
                     cx, cy = v.dxf.center.x, v.dxf.center.y
         except Exception:
             pass
-        # 真圈心：件號 block 的插入點落在圓周右緣（離圈心恰為 r），
-        # 引線量測必須用圈心——用 insert 會漏掉對側引線（超短小車實測
-        # 殘留 52/139）且誤殺貼 insert 的零件短線（8 支代表圖層0 誤殺 33）。
+        # 真圈心：件号 block 的插入点落在圆周右缘（离圈心恰为 r），
+        # 引线量测必须用圈心——用 insert 会漏掉对侧引线（超短小车实测
+        # 残留 52/139）且误杀贴 insert 的零件短线（8 支代表图层0 误杀 33）。
         balloons.append({"n": n, "x": e.dxf.insert.x, "y": e.dxf.insert.y,
                          "r": r or 27.0,
                          "cx": cx if cx is not None else e.dxf.insert.x,
@@ -429,16 +429,16 @@ def _bm_collect_block_balloons(msp):
 
 
 def _bm_orphan_circles(circles, paired, lines, block_mode):
-    """策略⑤：漏網氣球（孤圈）＋貼圈緣引線。回傳 (extra_circles, extra_leaders)。
+    """策略⑤：漏网气球（孤圈）＋贴圈缘引线。回传 (extra_circles, extra_leaders)。
 
-    圈沒配到文字、但圈緣有線端點貼著（引線）→ 同樣當氣球移除。
-    p_type/K型 實測都出現過這種孤圈；只刪「一端貼圈(≤1.5r)、另一端在 2r 外」
-    的線，避免誤殺穿過孔位的中心線。
+    圈没配到文字、但圈缘有线端点贴著（引线）→ 同样当气球移除。
+    p_type/K型 实测都出现过这种孤圈；只删「一端贴圈(≤1.5r)、另一端在 2r 外」
+    的线，避免误杀穿过孔位的中心线。
     """
     extra_circles, extra_leaders = set(), set()
     for i, c in enumerate(circles):
         if block_mode:
-            break          # block 模式：頂層圈全是零件，孤圈規則會誤殺
+            break          # block 模式：顶层圈全是零件，孤圈规则会误杀
         if i in paired:
             continue
         b = {"x": c.dxf.center.x, "y": c.dxf.center.y, "r": c.dxf.radius}
@@ -454,45 +454,45 @@ def _bm_orphan_circles(circles, paired, lines, block_mode):
 
 
 def _bm_axis_gate(balloons, axis_lines):
-    """策略⑥：自動標定①離軸閘門。
+    """策略⑥：自动标定①离轴闸门。
 
-    K型 層2 = ACAD_ISO12W100（ISO 虛線）＝零件中間的組立假想線。軸線的「端點
-    正好落在零件中心」，radial_leaders 的「一端貼 ≤1.35a、另一端 ≥2.5a」對它
-    永遠成立 → 坐在軸線上的軸承圈全被誤判成泡泡刪掉（2026-10-10 實測 13 顆
-    全是零件，另加重規則2 的部分弧共 30 顆）。
-    判別力（同一份圖量的）：
-      34 顆編號氣球 距軸線 84 ~ 494（中位 128）
-      13 顆被誤刪的軸承 距軸線 0 ~ 16
-    完全分離，故閘門取 60（留安全邊距）。
+    K型 层2 = ACAD_ISO12W100（ISO 虚线）＝零件中间的组立假想线。轴线的「端点
+    正好落在零件中心」，radial_leaders 的「一端贴 ≤1.35a、另一端 ≥2.5a」对它
+    永远成立 → 坐在轴线上的轴承圈全被误判成泡泡删掉（2026-10-10 实测 13 颗
+    全是零件，另加重规则2 的部分弧共 30 颗）。
+    判别力（同一份图量的）：
+      34 颗编号气球 距轴线 84 ~ 494（中位 128）
+      13 颗被误删的轴承 距轴线 0 ~ 16
+    完全分离，故闸门取 60（留安全边距）。
 
-    自動標定①：離軸閘門 = 編號氣球距軸線「最小值」×0.7。
-    原理：氣球永遠畫在軸線外、零件永遠坐在軸線上；取最貼近軸線的那顆氣球再
-    打 7 折當安全邊距。K型：min=84 → 58.8（原本硬編碼 60，等價）。
+    自动标定①：离轴闸门 = 编号气球距轴线「最小值」×0.7。
+    原理：气球永远画在轴线外、零件永远坐在轴线上；取最贴近轴线的那颗气球再
+    打 7 折当安全边距。K型：min=84 → 58.8（原本硬编码 60，等价）。
     """
     axis_d = sorted(_bm_d_axis(b["x"], b["y"], axis_lines) for b in balloons)
     return max(10.0, axis_d[0] * 0.7) if axis_d else 60.0
 
 
 def _bm_bubbles(msp, lines, axis_lines, axis_gate, block_mode):
-    """策略⑦：註記泡泡（無文字版）。回傳 (bubble_ids, leader_ids)。
+    """策略⑦：注记泡泡（无文字版）。回传 (bubble_ids, leader_ids)。
 
-    完整等軸測圈 a∈[10,50] 若帶徑向引線（一端貼圈 ≤1.35a、另端 ≥2.5a）
-    ＝沒有號碼的註記圈。
-    ⚠️ 這條規則很容易被兩個東西騙過，都已加閘門：
-      ① 組立軸線（端點落在零件中心 → 條件永遠成立）→ AXIS_GATE 擋
-      ② 編號氣球的引線（氣球指的一定是零件）→ _bm_has_balloon_leader 擋
-    K型 修前因此誤刪 13 顆軸承（雙同心圈 a=27.8+35.0 當時被誤記成「使用者指的
-    泡泡球」，實測那些全是零件）；加閘門後 13 → 0。
-    ⚠️ block 模式（手冊批）整組停用：這批圖的等軸測橢圓（ratio 0.58≈cos54.7°）
-    全是零件面——超短小車實測「滿圈註記泡泡」判定 chain 吃掉相鄰 a=13.5 半橢圓
-    （鏈條鏈環），正是使用者 2026-10-19 點名的「零件輪廓線不能刪」。
-    🔴 2026-11-12 曾試「⑦b block 保守版」（只刪滿圈＋直接引線、無鏈延伸、
-    crowd≤1、不設軸線閘門），**全庫實證 100% 誤殺後拆除**：46 支共刪 226 顆
-    橢圓、226 顆 ratio 全＝0.577（等軸測簽名），零顆真泡泡。等軸測「空心銷」
-    的兩端面＋兩條母線正好構成「滿圈＋徑向引線」，crowd=0 因爆炸圖零件本就
-    浮空——所有閘門同時失效。齒輪箱b.ba 目視：整支銷刪光、華司內孔刪成實心，
-    連帶 P32 錨分量消失→區域生長吞鄰件（140→1470 段、共管 0→2 重複畫圖）。
-    **別再試任何 block 模式 ELLIPSE 刪除規則。**
+    完整等轴测圈 a∈[10,50] 若带径向引线（一端贴圈 ≤1.35a、另端 ≥2.5a）
+    ＝没有号码的注记圈。
+    ⚠️ 这条规则很容易被两个东西骗过，都已加闸门：
+      ① 组立轴线（端点落在零件中心 → 条件永远成立）→ AXIS_GATE 挡
+      ② 编号气球的引线（气球指的一定是零件）→ _bm_has_balloon_leader 挡
+    K型 修前因此误删 13 颗轴承（双同心圈 a=27.8+35.0 当时被误记成「使用者指的
+    泡泡球」，实测那些全是零件）；加闸门后 13 → 0。
+    ⚠️ block 模式（手册批）整组停用：这批图的等轴测椭圆（ratio 0.58≈cos54.7°）
+    全是零件面——超短小车实测「满圈注记泡泡」判定 chain 吃掉相邻 a=13.5 半椭圆
+    （链条链环），正是使用者 2026-10-19 点名的「零件轮廓线不能删」。
+    🔴 2026-11-12 曾试「⑦b block 保守版」（只删满圈＋直接引线、无链延伸、
+    crowd≤1、不设轴线闸门），**全库实证 100% 误杀后拆除**：46 支共删 226 颗
+    椭圆、226 颗 ratio 全＝0.577（等轴测签名），零颗真泡泡。等轴测「空心销」
+    的两端面＋两条母线正好构成「满圈＋径向引线」，crowd=0 因爆炸图零件本就
+    浮空——所有闸门同时失效。齿轮箱b.ba 目视：整支销删光、华司内孔删成实心，
+    连带 P32 锚分量消失→区域生长吞邻件（140→1470 段、共管 0→2 重复画图）。
+    **别再试任何 block 模式 ELLIPSE 删除规则。**
     """
     bubble_ids, leader_ids = set(), set()
     for e in ([] if block_mode else msp.query("ELLIPSE")):
@@ -502,13 +502,13 @@ def _bm_bubbles(msp, lines, axis_lines, axis_gate, block_mode):
         if abs((e.dxf.end_param - e.dxf.start_param) - 2 * math.pi) > 0.05:
             continue
         cx, cy = e.dxf.center.x, e.dxf.center.y
-        # 閘門：坐在組立軸線上的一定是零件（見 _bm_axis_gate 說明）。
+        # 闸门：坐在组立轴线上的一定是零件（见 _bm_axis_gate 说明）。
         if _bm_d_axis(cx, cy, axis_lines) <= axis_gate:
             continue
         leads = _bm_radial_leaders(cx, cy, a, lines)
         if not leads:
             continue
-        # 同心同尺度完整圈一併成組刪除（雙環結構）
+        # 同心同尺度完整圈一并成组删除（双环结构）
         for f in msp.query("ELLIPSE"):
             b = f.dxf.major_axis.magnitude
             if not (10 <= b <= 50 and 0.45 <= f.dxf.ratio <= 0.75):
@@ -517,9 +517,9 @@ def _bm_bubbles(msp, lines, axis_lines, axis_gate, block_mode):
             full = abs((f.dxf.end_param - f.dxf.start_param) - 2 * math.pi) <= 0.05
             if full and off < 5 and abs(b - a) < 25:
                 bubble_ids.add(id(f))
-            # 規則2：與泡泡同心的同尺寸「部分弧」＝泡泡畫圓時的殘影複本，
-            # 現行完整圈判定會漏掉。K型 實測 9 處 22 顆，紅綠疊圖確認全是
-            # 泡泡複本、非零件幾何（2026-10-10）。閾值照流程筆記：偏移<15、|Δa|<5。
+            # 规则2：与泡泡同心的同尺寸「部分弧」＝泡泡画圆时的残影复本，
+            # 现行完整圈判定会漏掉。K型 实测 9 处 22 颗，红绿叠图确认全是
+            # 泡泡复本、非零件几何（2026-10-10）。阈值照流程笔记：偏移<15、|Δa|<5。
             elif (not full) and off < 15 and abs(b - a) < 5:
                 bubble_ids.add(id(f))
         leader_ids.update(id(L) for L in leads)
@@ -527,29 +527,29 @@ def _bm_bubbles(msp, lines, axis_lines, axis_gate, block_mode):
 
 
 def _bm_heads(msp, lines, texts, balloons, axis_lines, axis_gate, block_mode):
-    """策略⑧（S1 半圓頭波）：無編號氣球頭＋引線鏈。回傳 (head_ids, chain_ids)。
+    """策略⑧（S1 半圆头波）：无编号气球头＋引线链。回传 (head_ids, chain_ids)。
 
-    氣球不一定畫成「滿圓」：S1 是 a=10 sweep=180° 的半圓頭（外加一條
-    129.6 長的折引線），另有一顆 a=15.5 sweep=314° 的近圓頭。它們不含數字、
-    也不在軸線上，上面兩條規則都漏抓 → 頭和引線都留在圖上（使用者回報 S1）。
-    三道閘門，基準都是「本圖的編號氣球」，閾值自動標定（見 _bm_axis_gate /
-    下方 CROWD_GATE），換圖不用手調：
-      ① 距組立軸線 > AXIS_GATE（= 氣球最小距離×0.7；K型 58.8，氣球 84~494、
+    气球不一定画成「满圆」：S1 是 a=10 sweep=180° 的半圆头（外加一条
+    129.6 长的折引线），另有一颗 a=15.5 sweep=314° 的近圆头。它们不含数字、
+    也不在轴线上，上面两条规则都漏抓 → 头和引线都留在图上（使用者回报 S1）。
+    三道闸门，基准都是「本图的编号气球」，阈值自动标定（见 _bm_axis_gate /
+    下方 CROWD_GATE），换图不用手调：
+      ① 距组立轴线 > AXIS_GATE（= 气球最小距离×0.7；K型 58.8，气球 84~494、
          零件 0~16）
-      ② 1.5×尺寸內浮空點 ≤ CROWD_GATE（= 氣球 crowd 最大值；K型 氣球實測
-         [0×25, 1×10] → 1。剛好擋掉一顆 crowd=2 的存疑頭——它旁邊有同心
-         a=4.5 環、又貼 a=80 零件弧，更像零件特徵，使用者也沒回報它）
-      ③ 引線不是編號氣球的引線（編號氣球指的一定是零件）
+      ② 1.5×尺寸内浮空点 ≤ CROWD_GATE（= 气球 crowd 最大值；K型 气球实测
+         [0×25, 1×10] → 1。刚好挡掉一颗 crowd=2 的存疑头——它旁边有同心
+         a=4.5 环、又贴 a=80 零件弧，更像零件特征，使用者也没回报它）
+      ③ 引线不是编号气球的引线（编号气球指的一定是零件）
     """
     axis_id = {id(L) for L in axis_lines}
 
-    # 自動標定②：浮空閘門 = 編號氣球 crowd 的「最大值」。
-    # 語意＝「氣球頭不能比最擁擠的真氣球更擁擠」。注意量測口徑必須和候選頭一致
-    # （都要過 family_of，它會排除自家同心圈與引線），否則不可比——K型 實測
-    # 氣球分佈 = [0×25, 1×10]，max = 1；剛好擋掉一顆 crowd=2 的存疑頭
-    # （有同心 a=4.5 環、又貼 a=80 零件弧，像零件特徵，使用者也沒回報它），
-    # 同時放行 S1 的 crowd=1 半圓頭。K型 標定結果 = 1（原本硬編碼 1，等價）。
-    _bc = ([] if block_mode else          # block 模式頭規則已停用，省掉 O(n²) 標定
+    # 自动标定②：浮空闸门 = 编号气球 crowd 的「最大值」。
+    # 语意＝「气球头不能比最拥挤的真气球更拥挤」。注意量测口径必须和候选头一致
+    # （都要过 family_of，它会排除自家同心圈与引线），否则不可比——K型 实测
+    # 气球分布 = [0×25, 1×10]，max = 1；刚好挡掉一颗 crowd=2 的存疑头
+    # （有同心 a=4.5 环、又贴 a=80 零件弧，像零件特征，使用者也没回报它），
+    # 同时放行 S1 的 crowd=1 半圆头。K型 标定结果 = 1（原本硬编码 1，等价）。
+    _bc = ([] if block_mode else          # block 模式头规则已停用，省掉 O(n²) 标定
            [_bm_crowd(b["x"], b["y"], b["r"] * 1.5,
                       _bm_family_of(b["x"], b["y"], msp, lines), msp, axis_id)
             for b in balloons])
@@ -564,9 +564,9 @@ def _bm_heads(msp, lines, texts, balloons, axis_lines, axis_gate, block_mode):
             continue
         cx, cy = e.dxf.center.x, e.dxf.center.y
         if _bm_num_text_inside(cx, cy, sz, texts):
-            continue                      # 有數字 → 已走配對路徑
+            continue                      # 有数字 → 已走配对路径
         if _bm_d_axis(cx, cy, axis_lines) <= axis_gate:
-            continue                      # 閘門①：坐在組立軸線上 = 零件
+            continue                      # 闸门①：坐在组立轴线上 = 零件
         leads = [L for L in lines
                  if min(math.hypot(L.dxf.start.x - cx, L.dxf.start.y - cy),
                         math.hypot(L.dxf.end.x - cx, L.dxf.end.y - cy)) <= sz * 1.5
@@ -575,12 +575,12 @@ def _bm_heads(msp, lines, texts, balloons, axis_lines, axis_gate, block_mode):
         if not leads:
             continue
         if _bm_has_balloon_leader(leads, balloons):
-            continue                      # 閘門③：編號氣球指向它 = 零件
+            continue                      # 闸门③：编号气球指向它 = 零件
         drop = _bm_family_of(cx, cy, msp, lines)
         if _bm_crowd(cx, cy, sz * 1.5, drop, msp, axis_id) > CROWD_GATE:
-            continue                      # 閘門②：不浮空 = 零件
+            continue                      # 闸门②：不浮空 = 零件
         head_ids.add(id(e))
-        # 沿引線鏈延伸到碰到零件為止（S1 的折線引線共 2 段）
+        # 沿引线链延伸到碰到零件为止（S1 的折线引线共 2 段）
         pending = list(leads)
         guard = 0
         while pending and guard < 40:
@@ -591,7 +591,7 @@ def _bm_heads(msp, lines, texts, balloons, axis_lines, axis_gate, block_mode):
             chain_ids.add(id(L))
             for p in (L.dxf.start, L.dxf.end):
                 if math.hypot(p.x - cx, p.y - cy) <= sz * 1.5:
-                    continue              # 這一端是頭
+                    continue              # 这一端是头
                 if _bm_nonline_touch(p.x, p.y, chain_ids | head_ids, msp):
                     continue              # 碰到零件 → 停
                 for M in lines:
@@ -607,15 +607,15 @@ def _bm_keep_drop(msp, circles, paired, extra_circles, extra_leaders,
                   leader_ids, bubble_ids,
                   balloon_arc_ids, head_ids, chain_ids, balloons, block_mode,
                   doc, layer_lt):
-    """策略⑨：終局 keep/drop 判決（8 代策略的匯流點，block/classic 共用）。
+    """策略⑨：终局 keep/drop 判决（8 代策略的汇流点，block/classic 共用）。
 
-    回傳 (keep, tips, dropped_lids, counters)。
-    tips 僅 block 模式有意義：引線遠端點 (x, y, 氣球索引)，供
-    assign_components 認領分量。
+    回传 (keep, tips, dropped_lids, counters)。
+    tips 仅 block 模式有意义：引线远端点 (x, y, 气球索引)，供
+    assign_components 认领分量。
     """
     keep = []
-    dropped_lids = set()          # 被當引線/假想線丟掉的 LINE id（診斷用）
-    tips = []                     # block 模式：引線遠端點 (x, y, 氣球索引)
+    dropped_lids = set()          # 被当引线/假想线丢掉的 LINE id（诊断用）
+    tips = []                     # block 模式：引线远端点 (x, y, 气球索引)
     n_drop_c = n_drop_l = n_dash = n_bub = 0
     for e in msp:
         t = e.dxftype()
@@ -658,51 +658,51 @@ def _bm_keep_drop(msp, circles, paired, extra_circles, extra_leaders,
 
 
 def balloon_mode(doc, msp):
-    """CIRCLE+數字 TEXT 配對當氣球：歸組 + 丟氣球圓與貼圓緣引線。
+    """CIRCLE+数字 TEXT 配对当气球：归组 + 丢气球圆与贴圆缘引线。
 
-    管線（各策略詳見對應 _bm_* 函式，歷史標定數據隨函式保存）：
-      ① _bm_pair_circle_text    CIRCLE+TEXT 基底配對
-      ② _bm_calibrate_radius    半徑自動標定（K型 27±3）
-      ③ _bm_add_arc_balloons    ARC 型氣球（K型波）
-      ④ _bm_collect_block_balloons  件號 block 氣球（誠岱46批；與①③互斥）
-      ⑤ _bm_orphan_circles      孤圈＋貼圈緣引線（block 模式停用）
-      ⑥ _bm_axis_gate           組立軸線閘門（自動標定①）
-      ⑦ _bm_bubbles             註記泡泡＋同心殘影（block 模式停用）
-      ⑧ _bm_heads               無編號氣球頭＋引線鏈（S1 波；block 模式停用；
-                                含自動標定② CROWD_GATE）
-      ⑨ _bm_keep_drop           終局判決（block/classic 共用）
-    歸組：block → assign_components（tip 認領）；classic → assign_segments。
+    管线（各策略详见对应 _bm_* 函式，历史标定数据随函式保存）：
+      ① _bm_pair_circle_text    CIRCLE+TEXT 基底配对
+      ② _bm_calibrate_radius    半径自动标定（K型 27±3）
+      ③ _bm_add_arc_balloons    ARC 型气球（K型波）
+      ④ _bm_collect_block_balloons  件号 block 气球（诚岱46批；与①③互斥）
+      ⑤ _bm_orphan_circles      孤圈＋贴圈缘引线（block 模式停用）
+      ⑥ _bm_axis_gate           组立轴线闸门（自动标定①）
+      ⑦ _bm_bubbles             注记泡泡＋同心残影（block 模式停用）
+      ⑧ _bm_heads               无编号气球头＋引线链（S1 波；block 模式停用；
+                                含自动标定② CROWD_GATE）
+      ⑨ _bm_keep_drop           终局判决（block/classic 共用）
+    归组：block → assign_components（tip 认领）；classic → assign_segments。
     """
     texts = [e for e in msp if e.dxftype() == "TEXT" and NUM_RE.match(e.dxf.text.strip())]
     circles = [e for e in msp if e.dxftype() == "CIRCLE"]
     lines = msp.query("LINE")
 
-    # ①② 基底配對＋半徑標定
+    # ①② 基底配对＋半径标定
     balloons, paired = _bm_pair_circle_text(texts, circles)
     r_med, arc_r_lo, arc_r_hi = _bm_calibrate_radius(circles, paired)
-    # ③ ARC 氣球（K型波）
+    # ③ ARC 气球（K型波）
     balloon_arc_ids = _bm_add_arc_balloons(texts, msp, balloons, arc_r_lo, arc_r_hi)
-    # ④ 件號 block 氣球（誠岱46批）——CIRCLE+TEXT/ARC 配對都落空才走這條
+    # ④ 件号 block 气球（诚岱46批）——CIRCLE+TEXT/ARC 配对都落空才走这条
     block_mode = False
     if not balloons:
         balloons = _bm_collect_block_balloons(msp)
         block_mode = bool(balloons)
     if not balloons:
-        raise SystemExit("無 P 圖層，也找不到 CIRCLE+數字 TEXT 配對——先在 CAD 分層再跑")
+        raise SystemExit("无 P 图层，也找不到 CIRCLE+数字 TEXT 配对——先在 CAD 分层再跑")
 
-    # ⑤ 孤圈＋貼圈緣引線
+    # ⑤ 孤圈＋贴圈缘引线
     extra_circles, extra_leaders = _bm_orphan_circles(circles, paired, lines, block_mode)
-    # ⑥ 組立假想線（虛線線型整批不進圖）＋軸線閘門自動標定
+    # ⑥ 组立假想线（虚线线型整批不进图）＋轴线闸门自动标定
     layer_lt = {}
     axis_lines = [L for L in lines
                   if _BM_DASH_RE.search(_bm_linetype_of(L, doc, layer_lt) or "")]
     axis_gate = _bm_axis_gate(balloons, axis_lines)
-    # ⑦ 註記泡泡（無文字版）
+    # ⑦ 注记泡泡（无文字版）
     bubble_ids, leader_ids = _bm_bubbles(msp, lines, axis_lines, axis_gate, block_mode)
-    # ⑧ 無編號氣球頭＋引線鏈
+    # ⑧ 无编号气球头＋引线链
     head_ids, chain_ids = _bm_heads(msp, lines, texts, balloons,
                                     axis_lines, axis_gate, block_mode)
-    # ⑨ 終局 keep/drop
+    # ⑨ 终局 keep/drop
     keep, tips, dropped_lids, cnt = _bm_keep_drop(
         msp, circles, paired, extra_circles, extra_leaders, leader_ids,
         bubble_ids, balloon_arc_ids, head_ids, chain_ids, balloons,
@@ -720,7 +720,7 @@ def balloon_mode(doc, msp):
                 groups[key] = ss
                 labels[key] = "%s-part" % key
         n_unassigned = len(unassigned)
-    # 診斷轉儲：給「泡泡線逐張檢查」用（唯讀，不影響輸出）
+    # 诊断转储：给「泡泡线逐张检查」用（唯读，不影响输出）
     globals()["LAST_DEBUG"] = {
         "keep": keep, "dropped_lids": dropped_lids,
         "bubble_ids": bubble_ids, "head_ids": head_ids,
@@ -736,7 +736,7 @@ def balloon_mode(doc, msp):
 
 
 def connected_components(segs):
-    """並查集分量：端點落同 1.0 網格即相連（歸組與人工 override 共用）。"""
+    """并查集分量：端点落同 1.0 网格即相连（归组与人工 override 共用）。"""
     parent = list(range(len(segs)))
 
     def find(x):
@@ -759,26 +759,26 @@ def connected_components(segs):
 
 
 def assign_components(segs, balloons, tips):
-    """block 模式歸組：連通分量＋錨定區域生長（2026-10-21 重寫）。
+    """block 模式归组：连通分量＋锚定区域生长（2026-10-21 重写）。
 
-    舊規則「每顆 tip 只認領最近一個分量，其餘分量按最近 tip、半徑＝對角線
-    10% 兜底」實測 86% 的分量走兜底、半徑 716 單位（零件間距 100–300），
-    造成兩種症狀：鄰件碎塊被吸進來（兩件一起變紅）、本件分量被吸走或丟棄
-    （只紅一半／少線）。新規則：
-      1. keep 段按共端點（≤1.0）連成連通分量
-      2. tip 認領錨分量（≤80，同舊制）；無引線氣球用圓心當偽 tip
-      3. 從錨往外區域生長：與「本件已收幾何」距離 ≤ 對角線 1.5% 的分量
-         吸附進來，先近後遠，一個分量只歸一件
-      4. 仍無主的分量：最近 tip ≤ 對角線 3%，且 d1 < 0.6·d2（明顯較近）
-         才收；否則畫成無標籤的「未歸組」群（不再整段丟線）
-      5. 外圖框（≤12 段、框大於全幅 1/4、框內含 ≥80% 線段）直接刪除；視圖框保留
+    旧规则「每颗 tip 只认领最近一个分量，其余分量按最近 tip、半径＝对角线
+    10% 兜底」实测 86% 的分量走兜底、半径 716 单位（零件间距 100–300），
+    造成两种症状：邻件碎块被吸进来（两件一起变红）、本件分量被吸走或丢弃
+    （只红一半／少线）。新规则：
+      1. keep 段按共端点（≤1.0）连成连通分量
+      2. tip 认领锚分量（≤80，同旧制）；无引线气球用圆心当伪 tip
+      3. 从锚往外区域生长：与「本件已收几何」距离 ≤ 对角线 1.5% 的分量
+         吸附进来，先近后远，一个分量只归一件
+      4. 仍无主的分量：最近 tip ≤ 对角线 3%，且 d1 < 0.6·d2（明显较近）
+         才收；否则画成无标签的「未归组」群（不再整段丢线）
+      5. 外图框（≤12 段、框大于全幅 1/4、框内含 ≥80% 线段）直接删除；视图框保留
     """
     if not segs:
         return {}, {}, 0
     xs = [s[0] for s in segs] + [s[2] for s in segs]
     ys = [s[1] for s in segs] + [s[3] for s in segs]
 
-    # 1) 連通分量（並查集邏輯抽成 connected_components，override 共用）
+    # 1) 连通分量（并查集逻辑抽成 connected_components，override 共用）
     comp_list = connected_components(segs)
 
     def pts_of_comp(c):
@@ -789,8 +789,8 @@ def assign_components(segs, balloons, tips):
         ys_ = [p[1] for p in pts]
         return (min(xs_), min(ys_), max(xs_), max(ys_))
 
-    # 1b) 刪「整張圖的外框」：少段數的大框，且框內含 ≥80% 的線段。
-    #     只包住局部零件組的視圖框（框內只佔少數）保留。
+    # 1b) 删「整张图的外框」：少段数的大框，且框内含 ≥80% 的线段。
+    #     只包住局部零件组的视图框（框内只占少数）保留。
     gx0, gy0 = min(xs), min(ys)
     gx1, gy1 = max(xs), max(ys)
     garea = ((gx1 - gx0) or 1.0) * ((gy1 - gy0) or 1.0)
@@ -822,14 +822,14 @@ def assign_components(segs, balloons, tips):
     ally = [p[1] for p in cpts for p in p] or [0.0]
     dia = math.hypot(max(allx) - min(allx), max(ally) - min(ally))
 
-    # 2) 無引線氣球：圓心當偽 tip
+    # 2) 无引线气球：圆心当伪 tip
     tips = list(tips)
     have = {bi for _, _, bi in tips}
     for bi, b in enumerate(balloons):
         if bi not in have:
             tips.append((b["cx"], b["cy"], bi))
 
-    # 3) tip 認領錨分量（≤80，取最近）
+    # 3) tip 认领锚分量（≤80，取最近）
     owners = [set() for _ in comp_list]
     for tx, ty, bi in tips:
         best, bd = None, 1e18
@@ -840,8 +840,8 @@ def assign_components(segs, balloons, tips):
         if best is not None and bd <= 80:
             owners[best].add(bi)
 
-    # 4) 錨定區域生長
-    G = dia * 0.015                      # 生長間隙
+    # 4) 锚定区域生长
+    G = dia * 0.015                      # 生长间隙
     parts = {}                           # key -> {"pts": [...], "segs": [...]}
     ggrid = {}                           # (cell) -> [(key, x, y)]
 
@@ -851,9 +851,9 @@ def assign_components(segs, balloons, tips):
         parts[key]["pts"].extend(pts)
 
     cdiag = [math.hypot(b[2] - b[0], b[3] - b[1]) for b in cbb]
-    # bis / key 集合必須排序迭代：set 序隨 PYTHONHASHSEED 變，會翻動
-    # add_pts 的網格插入序 → 區域生長距離平手的 tie-break 不確定（同一支
-    # DWG 兩次轉檔群組不同的元兇，2026-10-22 修）。
+    # bis / key 集合必须排序迭代：set 序随 PYTHONHASHSEED 变，会翻动
+    # add_pts 的网格插入序 → 区域生长距离平手的 tie-break 不确定（同一支
+    # DWG 两次转档群组不同的元凶，2026-10-22 修）。
     for ci, bis in enumerate(owners):
         if not bis:
             continue
@@ -887,7 +887,7 @@ def assign_components(segs, balloons, tips):
         if not attached:
             break
 
-    # 5) 剩下：明顯較近的 tip 才收，否則進「未歸組」
+    # 5) 剩下：明显较近的 tip 才收，否则进「未归组」
     loose = []
     for ci in sorted(unassigned):
         ds = []
@@ -914,20 +914,20 @@ def assign_components(segs, balloons, tips):
             labels[key] = "%s-part" % key
     for ci in loose:
         groups.setdefault("X000", []).extend(comp_list[ci])
-    # X000 不給 label → 檢視頁不會把它變成可 hover 的零件（避免一堆不相干
-    # 碎段一起變紅）；線仍然畫出來，不丟資料。
+    # X000 不给 label → 检视页不会把它变成可 hover 的零件（避免一堆不相干
+    # 碎段一起变红）；线仍然画出来，不丢资料。
 
     multi = sum(1 for o in owners if len({balloons[bi]["n"] for bi in o}) > 1)
-    print("歸組: 分量 %d / 刪圖框 %d / 多編號共管 %d / 群組 %d / 未歸組分量 %d"
+    print("归组: 分量 %d / 删图框 %d / 多编号共管 %d / 群组 %d / 未归组分量 %d"
           % (len(comp_list), n_frame, multi, len(groups), len(loose)))
     return groups, labels, len(loose)
 
 
 def choose_rotation(groups):
-    """挑一個讓「主軸水平 + 橫式」的旋轉角（0/90/180/270）。
+    """挑一个让「主轴水平 + 横式」的旋转角（0/90/180/270）。
 
-    主軸＝以線段中點、長度加權的 PCA 主方向；分數 = 主軸離水平的角度
-    （0–90°）+ 直式罰分 45°。同分取小角度，確保原本就正的水平圖不動。
+    主轴＝以线段中点、长度加权的 PCA 主方向；分数 = 主轴离水平的角度
+    （0–90°）+ 直式罚分 45°。同分取小角度，确保原本就正的水平图不动。
     """
     best_deg, best_score = 0, 1e9
     for deg in (0, 90, 180, 270):
@@ -960,7 +960,7 @@ def choose_rotation(groups):
 
 
 def seg_point_dist(px, py, s):
-    """點到線段的最短距離（投影鉗位在段內）。"""
+    """点到线段的最短距离（投影钳位在段内）。"""
     x1, y1, x2, y2 = s
     dx, dy = x2 - x1, y2 - y1
     l2 = dx * dx + dy * dy
@@ -969,22 +969,22 @@ def seg_point_dist(px, py, s):
 
 
 def apply_overrides(xf, labels, ops, key=""):
-    """人工指定歸組修正（2026-10-22）：放大檢視.html「修正模式」記錄的 ops。
+    """人工指定归组修正（2026-10-22）：放大检视.html「修正模式」记录的 ops。
 
-    每條 op = {"near": [x, y], "from": "P01", "to": "P02"|"X000"}——把離 near
-    最近的連通分量整塊從 from 搬到 to；X000 = 無主（照畫、無標籤、檢視頁
-    不可 hover）。near 座標系＝flip_rot 後的輸出 SVG，與預覽頁點擊座標一致，
-    旋轉差異自動吸收。分量搬移不增刪線段 → viewBox 不變，可當校驗值。
-    幾何無解的案例（P01 螺栓 vs 配重塊，兩條引線端點同落一疊線）由此兜底。
-    回傳實際套用筆數。
+    每条 op = {"near": [x, y], "from": "P01", "to": "P02"|"X000"}——把离 near
+    最近的连通分量整块从 from 搬到 to；X000 = 无主（照画、无标签、检视页
+    不可 hover）。near 座标系＝flip_rot 后的输出 SVG，与预览页点击座标一致，
+    旋转差异自动吸收。分量搬移不增删线段 → viewBox 不变，可当校验值。
+    几何无解的案例（P01 螺栓 vs 配重块，两条引线端点同落一叠线）由此兜底。
+    回传实际套用笔数。
     """
     applied = 0
     all_segs = [s for v in xf.values() for s in v]
     xs = [s[0] for s in all_segs] + [s[2] for s in all_segs]
     ys = [s[1] for s in all_segs] + [s[3] for s in all_segs]
     cap = math.hypot(max(xs) - min(xs), max(ys) - min(ys)) * 0.02
-    # 校驗：錄製時的 viewBox vs 本次重轉（同 DWG 同旋轉 → 應逐字相同；
-    # 不同代表旋轉/幾何變了，near 可能失準——警告但不擋，由人判斷）
+    # 校验：录制时的 viewBox vs 本次重转（同 DWG 同旋转 → 应逐字相同；
+    # 不同代表旋转/几何变了，near 可能失准——警告但不挡，由人判断）
     want_vb = next((o.get("viewBox") for o in ops if o.get("viewBox")), None)
     if want_vb:
         w_, h_ = ((max(xs) - min(xs)) or 1.0), ((max(ys) - min(ys)) or 1.0)
@@ -992,15 +992,15 @@ def apply_overrides(xf, labels, ops, key=""):
         got_vb = "%.2f %.2f %.2f %.2f" % (min(xs) - pad_, min(ys) - pad_,
                                           w_ + 2 * pad_, h_ + 2 * pad_)
         if got_vb != want_vb:
-            print("override ⚠️ viewBox 不一致：錄製=%s 現在=%s（near 可能失準）"
+            print("override ⚠️ viewBox 不一致：录制=%s 现在=%s（near 可能失准）"
                   % (want_vb, got_vb))
     for op in ops:
         near, frm, to = op.get("near"), op.get("from"), op.get("to")
         if not (near and frm and to) or frm == to:
-            print("override %s: 欄位不全或 from=to，跳過 %r" % (key, op))
+            print("override %s: 栏位不全或 from=to，跳过 %r" % (key, op))
             continue
         if frm not in xf:
-            print("override %s: from=%s 不存在，跳過" % (key, frm))
+            print("override %s: from=%s 不存在，跳过" % (key, frm))
             continue
         comps = connected_components([s for v in xf.values() for s in v])
         best, bd = None, 1e18
@@ -1009,19 +1009,19 @@ def apply_overrides(xf, labels, ops, key=""):
             if d < bd:
                 bd, best = d, c
         if best is None or bd > cap:
-            print("override %s: 點擊離任何線太遠（%.0f > %.0f），跳過 %r"
+            print("override %s: 点击离任何线太远（%.0f > %.0f），跳过 %r"
                   % (key, bd, cap, op))
             continue
         cset = set(best)
         moved = [s for s in xf[frm] if s in cset]
         if not moved:
             owners = sorted(L for L, v in xf.items() if any(s in cset for s in v))
-            print("override %s: from=%s 不含該分量（在 %s），跳過 %r"
+            print("override %s: from=%s 不含该分量（在 %s），跳过 %r"
                   % (key, frm, owners, op))
             continue
         xf[frm] = [s for s in xf[frm] if s not in cset]
-        # to=無主且分量另有歸宿 → 只丟 from 的複本即可，線不會消失；
-        # 否則搬進 to（同段去重，共管分量搬兩次不會畫雙線）
+        # to=无主且分量另有归宿 → 只丢 from 的复本即可，线不会消失；
+        # 否则搬进 to（同段去重，共管分量搬两次不会画双线）
         if to != "X000" or not any(
                 s in cset for L2, v in xf.items() if L2 != frm for s in v):
             dest = xf.setdefault(to, [])
@@ -1041,19 +1041,19 @@ def build(svg_path, groups, labels, bom_ids=(), rotate="auto", override_ops=None
           stroke=None):
     all_segs = [s for v in groups.values() for s in v]
     if not all_segs:
-        raise SystemExit("沒有可畫的線段")
+        raise SystemExit("没有可画的线段")
     xs = [s[0] for s in all_segs] + [s[2] for s in all_segs]
     ys = [s[1] for s in all_segs] + [s[3] for s in all_segs]
     minx, miny, maxx, maxy = min(xs), min(ys), max(xs), max(ys)
     w0, h0 = (maxx - minx) or 1.0, (maxy - miny) or 1.0
 
-    # 自動轉正：直式（高>寬）轉成橫式，與 p_type 參考稿方向一致。
-    # 橫式圖不動 → p_type 回歸輸出逐位元組不變。可 --rotate 0/90/180/270 覆寫。
+    # 自动转正：直式（高>宽）转成横式，与 p_type 参考稿方向一致。
+    # 横式图不动 → p_type 回归输出逐位元组不变。可 --rotate 0/90/180/270 覆写。
     deg = (90 if h0 > w0 else 0) if rotate == "auto" else int(rotate)
     xf = {L: flip_rot(v, deg) for L, v in groups.items()}
 
-    # 人工指定修正：在 flip_rot 之後套用——override 的 near 與輸出 SVG 同座標
-    # 系；搬移不增刪線段，viewBox 與未套用時相同，錄製值可校驗重轉一致性。
+    # 人工指定修正：在 flip_rot 之后套用——override 的 near 与输出 SVG 同座标
+    # 系；搬移不增删线段，viewBox 与未套用时相同，录制值可校验重转一致性。
     if override_ops:
         apply_overrides(xf, labels, override_ops)
 
@@ -1063,7 +1063,7 @@ def build(svg_path, groups, labels, bom_ids=(), rotate="auto", override_ops=None
     tminx, tminy = min(txs), min(tys)
     w, h = (max(txs) - tminx) or 1.0, (max(tys) - tminy) or 1.0
     pad = max(w, h) * 0.02
-    # 細齒圖（齒輪/軸承齒距 < 預設筆畫）會糊成實心黑塊，--stroke 可覆寫成細筆畫
+    # 细齿图（齿轮/轴承齿距 < 预设笔画）会糊成实心黑块，--stroke 可覆写成细笔画
     sw = float(stroke) if stroke is not None else math.hypot(w, h) * 0.002
 
     def sort_key(L):
@@ -1089,15 +1089,15 @@ def build(svg_path, groups, labels, bom_ids=(), rotate="auto", override_ops=None
         fh.write(svg)
 
     ids = {m.group(1) for m in (re.match(r"(P\d+)", v) for v in labels.values()) if m}
-    print("產出:", svg_path)
-    print("旋轉: %s%s（原 %.0f×%.0f → %.0f×%.0f）"
-          % (deg, "°順時針" if deg else "（不轉）", w0, h0, w, h))
-    print("零件群組 %d / 線段 %d" % (len(groups), len(all_segs)))
+    print("产出:", svg_path)
+    print("旋转: %s%s（原 %.0f×%.0f → %.0f×%.0f）"
+          % (deg, "°顺时针" if deg else "（不转）", w0, h0, w, h))
+    print("零件群组 %d / 线段 %d" % (len(groups), len(all_segs)))
     if bom_ids:
-        print("bom 交叉: 有圖無bom =", sorted(ids - bom_ids) or "無",
-              "| 有bom無圖 =", sorted(bom_ids - ids) or "無")
+        print("bom 交叉: 有图无bom =", sorted(ids - bom_ids) or "无",
+              "| 有bom无图 =", sorted(bom_ids - ids) or "无")
     else:
-        print("bom 交叉: 未提供 bom.csv（跳過）")
+        print("bom 交叉: 未提供 bom.csv（跳过）")
 
 
 def main():
@@ -1108,7 +1108,7 @@ def main():
     if "--stroke" in args:
         i = args.index("--stroke")
         if i + 1 >= len(args):
-            raise SystemExit("--stroke 需要數值（如 0.15）")
+            raise SystemExit("--stroke 需要数值（如 0.15）")
         stroke = args[i + 1]
         del args[i:i + 2]
     if "--rotate" in args:
@@ -1120,13 +1120,13 @@ def main():
     if "--overrides" in args:
         i = args.index("--overrides")
         if i + 1 >= len(args):
-            raise SystemExit("--overrides 需要 JSON 路徑")
+            raise SystemExit("--overrides 需要 JSON 路径")
         ov_path = args[i + 1]
         del args[i:i + 2]
     if "--key" in args:
         i = args.index("--key")
         if i + 1 >= len(args):
-            raise SystemExit("--key 需要 相對路徑（如 鏈條/190/超短小車）")
+            raise SystemExit("--key 需要 相对路径（如 链条/190/超短小车）")
         key = args[i + 1]
         del args[i:i + 2]
     if len(args) < 2:
@@ -1142,28 +1142,28 @@ def main():
         entry = data.get(key) or {}
         override_ops = entry.get("ops") or []
         if key not in data:
-            print("override: %s 無記錄（表內 %d 檔），照常輸出" % (key, len(data)))
+            print("override: %s 无记录（表内 %d 档），照常输出" % (key, len(data)))
         elif override_ops:
-            print("override: 套用 %d 筆" % len(override_ops))
+            print("override: 套用 %d 笔" % len(override_ops))
     doc = ezdxf.readfile(convert_dwg(dwg, "/tmp/dwgextract"))
     msp = doc.modelspace()
     has_player = any(LAYER_RE.match(e.dxf.layer) for e in msp
                      if e.dxf.hasattr("layer"))
     if has_player:
-        print("模式: layer（P 圖層白名單）")
+        print("模式: layer（P 图层白名单）")
         groups, labels, stats = layer_mode(doc, msp)
     else:
-        print("模式: balloon（CIRCLE+TEXT 氣球歸組）")
+        print("模式: balloon（CIRCLE+TEXT 气球归组）")
         groups, labels, stats = balloon_mode(doc, msp)
         if rotate == "auto":
-            rotate = choose_rotation(groups)   # 主軸水平＋橫式
-    # 標籤正規化：Pnn-part → Pnn-品名（bom Name）；其他格式修亂碼
+            rotate = choose_rotation(groups)   # 主轴水平＋横式
+    # 标签正规化：Pnn-part → Pnn-品名（bom Name）；其他格式修乱码
     names = read_bom_names(bom)
     for k in list(labels):
         labels[k] = fix_mojibake(labels[k])
         if k in names:
             labels[k] = "%s-%s" % (k, names[k])
-    print("統計:", stats)
+    print("统计:", stats)
     build(out, groups, labels, read_bom_ids(bom), rotate=rotate,
           override_ops=override_ops, stroke=stroke)
 

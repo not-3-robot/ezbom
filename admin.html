@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EzBOM 管理儀表板</title>
+    <title>EzBOM 管理仪表板</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -101,17 +101,17 @@
 
 <div id="password-overlay">
     <div class="pw-box">
-        <h3>🔒 管理員驗證</h3>
-        <input type="password" id="pw-input" placeholder="請輸入管理密碼" autocomplete="off">
-        <div id="pw-error">密碼錯誤，請重試</div>
-        <button onclick="verifyAdmin()">確認</button>
+        <h3>🔒 管理员验证</h3>
+        <input type="password" id="pw-input" placeholder="请输入管理密码" autocomplete="off">
+        <div id="pw-error">密码错误，请重试</div>
+        <button onclick="verifyAdmin()">确认</button>
     </div>
 </div>
 
 <div class="header">
-    <h1>📊 EzBOM 管理儀表板<span id="datasource-badge" style="font-size:11px;font-weight:400;color:#87867F;margin-left:8px;"></span></h1>
+    <h1>📊 EzBOM 管理仪表板<span id="datasource-badge" style="font-size:11px;font-weight:400;color:#87867F;margin-left:8px;"></span></h1>
     <div class="nav">
-        <a href="index.html">← 返回產品列表</a>
+        <a href="index.html">← 返回产品列表</a>
         <button class="refresh-btn" onclick="refreshData()">🔄 刷新</button>
     </div>
 </div>
@@ -119,70 +119,70 @@
 <div class="dashboard">
     <!-- KPI 卡片 -->
     <div class="card">
-        <h3>今日數據摘要</h3>
+        <h3>今日数据摘要</h3>
         <div class="kpi-grid" id="kpi-grid">
-            <div class="loading">載入中...</div>
+            <div class="loading">载入中...</div>
         </div>
     </div>
 
-    <!-- Tab 切換 -->
+    <!-- Tab 切换 -->
     <div class="card">
         <div class="tab-bar">
-            <button class="active" onclick="switchTab('overview', event)">總覽</button>
+            <button class="active" onclick="switchTab('overview', event)">总览</button>
             <button onclick="switchTab('parts', event)">零件分析</button>
-            <button onclick="switchTab('errors', event)">錯誤追蹤</button>
-            <button onclick="switchTab('raw', event)">原始數據</button>
+            <button onclick="switchTab('errors', event)">错误追踪</button>
+            <button onclick="switchTab('raw', event)">原始数据</button>
         </div>
 
-        <!-- 總覽 -->
+        <!-- 总览 -->
         <div id="tab-overview">
             <div class="stats-row">
                 <div>
-                    <h3>📅 每月採購數量</h3>
-                    <div id="daily-chart"><div class="loading">載入中...</div></div>
+                    <h3>📅 每月采购数量</h3>
+                    <div id="daily-chart"><div class="loading">载入中...</div></div>
                 </div>
                 <div>
-                    <h3>📱 設備分佈</h3>
-                    <div id="device-chart"><div class="loading">載入中...</div></div>
+                    <h3>📱 设备分布</h3>
+                    <div id="device-chart"><div class="loading">载入中...</div></div>
                 </div>
             </div>
         </div>
 
         <!-- 零件分析 -->
         <div id="tab-parts" style="display:none;">
-            <h3>🔥 最常被詢價零件 TOP 10</h3>
-            <div id="part-rank"><div class="loading">載入中...</div></div>
+            <h3>🔥 最常被询价零件 TOP 10</h3>
+            <div id="part-rank"><div class="loading">载入中...</div></div>
         </div>
 
-        <!-- 錯誤追蹤 -->
+        <!-- 错误追踪 -->
         <div id="tab-errors" style="display:none;">
-            <h3>⚠️ JS 錯誤記錄</h3>
-            <div class="error-list" id="error-log"><div class="loading">載入中...</div></div>
+            <h3>⚠️ JS 错误记录</h3>
+            <div class="error-list" id="error-log"><div class="loading">载入中...</div></div>
         </div>
 
-        <!-- 原始數據 -->
+        <!-- 原始数据 -->
         <div id="tab-raw" style="display:none;">
-            <h3>📋 原始日誌 CSV</h3>
-            <div id="raw-log"><div class="loading">載入中...</div></div>
+            <h3>📋 原始日志 CSV</h3>
+            <div id="raw-log"><div class="loading">载入中...</div></div>
         </div>
     </div>
 </div>
 
-<!-- Cloudflare Worker 設定：部署後替換為你的 Worker 網址和 API key -->
+<!-- Cloudflare Worker 设定：部署后替换为你的 Worker 网址和 API key -->
 <script>
 var EZBOM_WORKER_URL = 'https://ezbom-analytics.notnotnotrobot.workers.dev';
-var EZBOM_STATS_KEY = 'ezbom-stats-key-change-me'; // 需與 wrangler.toml 中 STATS_API_KEY 一致
+var EZBOM_STATS_KEY = 'ezbom-stats-key-change-me'; // 需与 wrangler.toml 中 STATS_API_KEY 一致
 </script>
 <script src="sanitize.js"></script>
 <script src="analytics.js"></script>
 <script>
 // ============================================================
-// 管理員驗證（SHA-256 hash，不再使用明文密碼）
+// 管理员验证（SHA-256 hash，不再使用明文密码）
 // ============================================================
-// 管理員密碼只存 SHA-256，原始碼不出現明文（本站公開可讀，
-// 舊版註解寫出預設密碼＝任何人都能登入）。改密碼：
-//   printf '%s' '新密碼' | shasum -a 256
-// 需要同步更新 admin.html 與 viewer.js 兩處，否則其中一個入口仍收舊密碼。
+// 管理员密码只存 SHA-256，原始码不出现明文（本站公开可读，
+// 旧版注解写出预设密码＝任何人都能登入）。改密码：
+//   printf '%s' '新密码' | shasum -a 256
+// 需要同步更新 admin.html 与 viewer.js 两处，否则其中一个入口仍收旧密码。
 const ADMIN_PASSWORD_HASH = '45eadc5e1f196c02b09c844a53bc23ea5efbf7f9f3339f91a666664440fef859';
 const DEFAULT_HASH = '45eadc5e1f196c02b09c844a53bc23ea5efbf7f9f3339f91a666664440fef859';
 
@@ -195,7 +195,7 @@ async function hashPassword(password) {
             .map(b => b.toString(16).padStart(2, '0'))
             .join('');
     }
-    // 降級：簡單 hash
+    // 降级：简单 hash
     let hash = 0;
     for (let i = 0; i < password.length; i++) {
         hash = ((hash << 5) - hash) + password.charCodeAt(i);
@@ -229,7 +229,7 @@ if (sessionStorage.getItem('ezbom_admin') === '1') {
 }
 
 // ============================================================
-// 數據載入
+// 数据载入
 // ============================================================
 let logData = [];
 let currentTab = 'overview';
@@ -241,7 +241,7 @@ async function loadDashboard() {
         var productRes = await fetch('./products.json');
         var products = productRes.ok ? (await productRes.json()).products || [] : [];
 
-        // 非同步取得分析數據（優先 Worker，降級 localStorage）
+        // 非同步取得分析数据（优先 Worker，降级 localStorage）
         window.EzBOMAnalytics.getSummary(function(analyticsSummary) {
             renderKPIs(stats, products, analyticsSummary);
             renderStats(stats, analyticsSummary);
@@ -270,29 +270,29 @@ function renderKPIs(stats, products, analytics) {
     var pv = analytics ? analytics.pageviews : 0;
     var inqs = analytics ? analytics.inquiries : 0;
 
-    // 資料來源標記
+    // 资料来源标记
     var badge = document.getElementById('datasource-badge');
     if (badge) {
         var hasRemote = analytics && analytics.total !== undefined && analytics.total > 0;
         var hasWorker = (typeof EZBOM_WORKER_URL !== 'undefined' && EZBOM_WORKER_URL !== '');
         if (hasWorker) badge.textContent = '☁️ Cloudflare Worker';
-        else badge.textContent = '(📱 本機 localStorage)';
+        else badge.textContent = '(📱 本机 localStorage)';
     }
 
     document.getElementById('kpi-grid').innerHTML = [
-        { num: productCount, label: '產品數' },
-        { num: totalParts, label: '已記錄零件' },
-        { num: totalCustomers, label: '歷史客戶' },
-        { num: totalOrders, label: '採購次數' },
-        { num: pv, label: '頁面瀏覽' },
-        { num: inqs, label: '詢價次數' }
+        { num: productCount, label: '产品数' },
+        { num: totalParts, label: '已记录零件' },
+        { num: totalCustomers, label: '历史客户' },
+        { num: totalOrders, label: '采购次数' },
+        { num: pv, label: '页面浏览' },
+        { num: inqs, label: '询价次数' }
     ].map(function(k) {
         return '<div class="kpi"><div class="num">' + k.num + '</div><div class="label">' + k.label + '</div></div>';
     }).join('');
 }
 
 function renderStats(stats, analytics) {
-    // 月度趨勢
+    // 月度趋势
     var allMonthly = [];
     Object.values(stats || {}).forEach(function(s) {
         (s.monthlyStats || []).forEach(function(m) {
@@ -302,21 +302,21 @@ function renderStats(stats, analytics) {
     });
     var maxQty = Math.max.apply(null, allMonthly.map(function(m) { return m.totalQty; }).concat([1]));
 
-    // 資料來源＝data/purchases/*.csv 的真實採購紀錄（經 generate_stats.py
-    // 彙整成 stats.json 的 monthlyStats），不是網站流量。標題與表頭必須
-    // 說「採購數量」，舊版標成「每日活躍用戶」會讓報表被誤讀。
+    // 资料来源＝data/purchases/*.csv 的真实采购纪录（经 generate_stats.py
+    // 汇整成 stats.json 的 monthlyStats），不是网站流量。标题与表头必须
+    // 说「采购数量」，旧版标成「每日活跃用户」会让报表被误读。
     document.getElementById('daily-chart').innerHTML = allMonthly.length === 0
-        ? '<div class="empty">暫無採購紀錄</div>'
+        ? '<div class="empty">暂无采购纪录</div>'
         : '<table><thead><tr><th style="width:80px;text-align:left">月份</th>'
-          + '<th style="text-align:left">採購數量趨勢</th>'
-          + '<th style="width:56px;text-align:right">件數</th></tr></thead><tbody>'
+          + '<th style="text-align:left">采购数量趋势</th>'
+          + '<th style="width:56px;text-align:right">件数</th></tr></thead><tbody>'
           + allMonthly.map(function(m) {
             var pct = (m.totalQty / maxQty * 100).toFixed(0);
             return '<tr><td>' + m.month + '</td><td><div class="bar-wrap"><div class="bar-fill" style="width:' + pct + '%"></div></div></td><td style="text-align:right">' + m.totalQty + '</td></tr>';
           }).join('') + '</tbody></table>';
 
-    // 設備分佈（來自 localStorage）
-    var deviceHTML = '<div class="empty">暫無瀏覽數據</div>';
+    // 设备分布（来自 localStorage）
+    var deviceHTML = '<div class="empty">暂无浏览数据</div>';
     if (analytics && analytics.devices) {
         var devices = Object.entries(analytics.devices).sort(function(a, b) { return b[1] - a[1]; });
         if (devices.length > 0) {
@@ -342,19 +342,19 @@ function renderStats(stats, analytics) {
     allParts.sort(function(a, b) { return b.totalQty - a.totalQty; });
 
     document.getElementById('part-rank').innerHTML = allParts.length === 0
-        ? '<div class="empty">暫無零件數據</div>'
-        : '<table><tr><th>#</th><th>料號</th><th>名稱</th><th>總數量</th><th>採購次數</th></tr>'
+        ? '<div class="empty">暂无零件数据</div>'
+        : '<table><tr><th>#</th><th>料号</th><th>名称</th><th>总数量</th><th>采购次数</th></tr>'
           + allParts.slice(0, 10).map(function(p, i) {
               return '<tr><td>' + (i+1) + '</td><td style="font-weight:600">' + p.partNumber + '</td><td style="color:#87867F">' + p.name + '</td><td>' + p.totalQty + '</td><td>' + p.orderCount + '</td></tr>';
           }).join('') + '</table>';
 
-    // 錯誤記錄（來自 localStorage）
+    // 错误记录（来自 localStorage）
     if (analytics && analytics.errors > 0 && window.EzBOMAnalytics) {
         var csv = window.EzBOMAnalytics.exportCSV();
         var lines = csv.split('\n').slice(1); // skip header
         var errorLines = lines.filter(function(l) { return l.indexOf('"error"') >= 0; });
         document.getElementById('error-log').innerHTML = errorLines.length === 0
-            ? '<div class="empty">無錯誤記錄</div>'
+            ? '<div class="empty">无错误记录</div>'
             : errorLines.map(function(l) {
                 var parts = l.split('","');
                 var msg = (parts[6] || '').replace(/"/g, '');
@@ -363,15 +363,15 @@ function renderStats(stats, analytics) {
                 return '<div class="error-item"><div class="err-msg">' + msg + '</div><div class="err-meta">' + ts + ' | ' + device + '</div></div>';
               }).join('');
     } else {
-        document.getElementById('error-log').innerHTML = '<div class="empty">無錯誤記錄</div>';
+        document.getElementById('error-log').innerHTML = '<div class="empty">无错误记录</div>';
     }
 
-    // 原始數據匯出
+    // 原始数据汇出
     document.getElementById('raw-log').innerHTML = '<div style="text-align:center;padding:20px;">'
-        + '<p style="margin-bottom:12px;color:#87867F;">數據存於瀏覽器 localStorage，可匯出 CSV</p>'
-        + '<button onclick="exportAnalytics()" style="padding:10px 20px;border:none;border-radius:8px;background:#D97757;color:white;cursor:pointer;font-size:14px;margin-right:8px;">📥 匯出 CSV</button>'
-        + '<button onclick="clearAnalytics()" style="padding:10px 20px;border:1px solid #E6E3DA;border-radius:8px;background:white;cursor:pointer;font-size:14px;color:#D97757;">🗑 清除數據</button>'
-        + '<p style="margin-top:8px;font-size:11px;color:#87867F;">注意：localStorage 僅在同一瀏覽器中儲存，清除會永久刪除</p>'
+        + '<p style="margin-bottom:12px;color:#87867F;">数据存于浏览器 localStorage，可汇出 CSV</p>'
+        + '<button onclick="exportAnalytics()" style="padding:10px 20px;border:none;border-radius:8px;background:#D97757;color:white;cursor:pointer;font-size:14px;margin-right:8px;">📥 汇出 CSV</button>'
+        + '<button onclick="clearAnalytics()" style="padding:10px 20px;border:1px solid #E6E3DA;border-radius:8px;background:white;cursor:pointer;font-size:14px;color:#D97757;">🗑 清除数据</button>'
+        + '<p style="margin-top:8px;font-size:11px;color:#87867F;">注意：localStorage 仅在同一浏览器中储存，清除会永久删除</p>'
         + '</div>';
 }
 
@@ -391,7 +391,7 @@ function refreshData() {
 function exportAnalytics() {
     if (!window.EzBOMAnalytics) return;
     var csv = window.EzBOMAnalytics.exportCSV();
-    if (!csv) { alert('暫無數據'); return; }
+    if (!csv) { alert('暂无数据'); return; }
     var blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
     var url = URL.createObjectURL(blob);
     var a = document.createElement('a');
@@ -402,7 +402,7 @@ function exportAnalytics() {
 }
 
 function clearAnalytics() {
-    if (!confirm('確定要清除所有分析數據？此操作不可恢復。')) return;
+    if (!confirm('确定要清除所有分析数据？此操作不可恢复。')) return;
     if (window.EzBOMAnalytics) window.EzBOMAnalytics.clear();
     loadDashboard();
 }

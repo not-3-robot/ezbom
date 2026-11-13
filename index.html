@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>EzBOM 零件詢價系統 — 產品型錄</title>
-<meta name="description" content="冠亞起重機械零件爆炸圖與 BOM 詢價型錄：鋼索式、鏈條式系列分類瀏覽。">
+<title>EzBOM 零件询价系统 — 产品型录</title>
+<meta name="description" content="冠亚起重机械零件爆炸图与 BOM 询价型录：钢索式、链条式系列分类浏览。">
 <style>
 /* ============================================================
    Palette — derived from the subject: blueprint paper, galvanised
@@ -14,10 +14,10 @@
   --ivory:#FAF9F5; --paper:#FFFFFF; --ink:#141413;
   --g100:#F0EEE6; --g200:#E6E3DA; --g300:#D1CFC5; --g500:#87867F; --g700:#3D3D3A;
 
-  --steel:#1E6FA8;      /* 鋼索 — cold cable blue */
+  --steel:#1E6FA8;      /* 钢索 — cold cable blue */
   --steel-d:#14507A;
   --steel-l:#E8F1F8;
-  --clay:#D97757;       /* 鏈條 — forged safety orange */
+  --clay:#D97757;       /* 链条 — forged safety orange */
   --clay-d:#B85C3E;
   --clay-l:#FBEDE7;
   --zinc:#7E8FA0;       /* P型 — galvanised neutral */
@@ -358,47 +358,47 @@ var EZBOM_STATS_KEY = 'ezbom-stats-key-change-me';
 
 <header class="nav" id="nav">
   <div class="nav-inner">
-    <a class="brand" href="./index.html" aria-label="EzBOM 首頁">
+    <a class="brand" href="./index.html" aria-label="EzBOM 首页">
       <span class="brand-mark">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.6v3.4M12 18v3.4M2.6 12H6M18 12h3.4M5.4 5.4l2.4 2.4M16.2 16.2l2.4 2.4M18.6 5.4l-2.4 2.4M7.8 16.2l-2.4 2.4"/></svg>
       </span>
-      <span class="brand-txt">EzBOM<small>零件詢價型錄</small></span>
+      <span class="brand-txt">EzBOM<small>零件询价型录</small></span>
     </a>
-    <nav class="cats" id="cats" role="tablist" aria-label="產品分類"></nav>
+    <nav class="cats" id="cats" role="tablist" aria-label="产品分类"></nav>
     <div class="nav-act">
-      <button class="icon-btn" id="share-btn" title="分享此頁面" aria-label="分享此頁面">🔗</button>
-      <button class="icon-btn" id="qr-btn" title="顯示 QR Code" aria-label="顯示 QR Code" aria-pressed="false">📱</button>
+      <button class="icon-btn" id="share-btn" title="分享此页面" aria-label="分享此页面">🔗</button>
+      <button class="icon-btn" id="qr-btn" title="显示 QR Code" aria-label="显示 QR Code" aria-pressed="false">📱</button>
     </div>
   </div>
   <div class="qr-wrap" id="qr-container">
     <canvas id="qr-canvas" width="200" height="200"></canvas>
-    <p>掃描 QR Code 在手機上開啟</p>
+    <p>扫描 QR Code 在手机上开启</p>
   </div>
 </header>
 
 <main>
   <section class="hero">
-    <span class="eyebrow"><i></i>冠亞起重機械 · 爆炸圖零件型錄</span>
-    <h1>先選<em>系列</em>，再展開零件。</h1>
-    <p class="lede">鋼索式與鏈條式各自獨立成頁，級距預設收合、需要時再展開，不一次倒出全部產品。點任何一張爆炸圖即可勾選零件、調整數量並送出詢價。</p>
+    <span class="eyebrow"><i></i>冠亚起重机械 · 爆炸图零件型录</span>
+    <h1>先选<em>系列</em>，再展开零件。</h1>
+    <p class="lede">钢索式与链条式各自独立成页，级距预设收合、需要时再展开，不一次倒出全部产品。点任何一张爆炸图即可勾选零件、调整数量并送出询价。</p>
     <div class="stats" id="hero-stats"></div>
   </section>
 
   <div class="toolbar">
     <label class="search" id="search-wrap">
       <span class="mag" aria-hidden="true">🔍</span>
-      <input id="q" type="search" placeholder="搜尋零件名稱、型號或料號…" autocomplete="off" aria-label="搜尋產品">
+      <input id="q" type="search" placeholder="搜寻零件名称、型号或料号…" autocomplete="off" aria-label="搜寻产品">
       <kbd>/</kbd>
-      <button class="clr" id="q-clear" type="button" aria-label="清除搜尋">✕</button>
+      <button class="clr" id="q-clear" type="button" aria-label="清除搜寻">✕</button>
     </label>
     <select class="tool" id="sort" aria-label="排序方式">
-      <option value="default">預設排序</option>
-      <option value="name">名稱 A→Z</option>
-      <option value="parts-desc">零件數 多→少</option>
-      <option value="parts-asc">零件數 少→多</option>
+      <option value="default">预设排序</option>
+      <option value="name">名称 A→Z</option>
+      <option value="parts-desc">零件数 多→少</option>
+      <option value="parts-asc">零件数 少→多</option>
     </select>
-    <button class="tool" id="thumbs" aria-pressed="true"><span class="sw">✓</span>縮圖</button>
-    <button class="tool" id="toggle-all">全部展開</button>
+    <button class="tool" id="thumbs" aria-pressed="true"><span class="sw">✓</span>缩图</button>
+    <button class="tool" id="toggle-all">全部展开</button>
   </div>
 
   <div id="views"></div>
@@ -406,13 +406,13 @@ var EZBOM_STATS_KEY = 'ezbom-stats-key-change-me';
 
   <div class="state" id="loading">
     <div class="spinner"></div>
-    <h3>載入產品型錄…</h3>
-    <p>正在讀取系列與零件清單</p>
+    <h3>载入产品型录…</h3>
+    <p>正在读取系列与零件清单</p>
   </div>
 </main>
 
 <footer>
-  <b>EzBOM</b> 零件詢價系統<span class="sep">·</span>冠亞起重機械
+  <b>EzBOM</b> 零件询价系统<span class="sep">·</span>冠亚起重机械
   <span class="sep">·</span><span id="foot-count"></span>
 </footer>
 
@@ -427,15 +427,15 @@ var esc = (window.EzBOMSanitize && window.EzBOMSanitize.escapeHtml)
 
 /* ---- category model: derived from products.json "model" ---- */
 var CATS = [
-  { key:'wr', num:'01', label:'鋼索式', match:/^鋼索式/, color:'var(--steel)',
-    desc:'鋼索捲揚系列。依額定荷重分為 0.75–5t 與 7–40t 兩個級距，齒輪箱、卷輪座、馬達與下吊鉤總成皆可獨立詢價。' },
-  { key:'ch', num:'02', label:'鏈條式', match:/^鏈條式/, color:'var(--clay)',
-    desc:'鏈條捲揚系列。160 與 190 兩種機身尺寸，含超短小車、齒輪箱、電器箱與馬達總成，適合低淨空場所。' },
-  { key:'p',  num:'03', label:'P型齒輪箱', match:/^P-TYPE/i, color:'var(--zinc)',
-    desc:'P-TYPE 齒輪箱單機總成，熱銷長銷機種，零件編號與舊版圖紙完全相容。' }
+  { key:'wr', num:'01', label:'钢索式', match:/^钢索式/, color:'var(--steel)',
+    desc:'钢索卷扬系列。依额定荷重分为 0.75–5t 与 7–40t 两个级距，齿轮箱、卷轮座、马达与下吊钩总成皆可独立询价。' },
+  { key:'ch', num:'02', label:'链条式', match:/^链条式/, color:'var(--clay)',
+    desc:'链条卷扬系列。160 与 190 两种机身尺寸，含超短小车、齿轮箱、电器箱与马达总成，适合低净空场所。' },
+  { key:'p',  num:'03', label:'P型齿轮箱', match:/^P-TYPE/i, color:'var(--zinc)',
+    desc:'P-TYPE 齿轮箱单机总成，热销长销机种，零件编号与旧版图纸完全相容。' }
 ];
 var OTHER = { key:'other', num:'04', label:'其他系列', match:null, color:'var(--amber)',
-  desc:'尚未歸類的產品，仍可正常檢視爆炸圖與 BOM 清單。' };
+  desc:'尚未归类的产品，仍可正常检视爆炸图与 BOM 清单。' };
 
 var state = { products:[], cats:[], active:null, query:'', sort:'default',
               thumbs:true, open:{} };
@@ -491,7 +491,7 @@ function loadThumb(card){
   box.setAttribute('data-done','1');
   var url = card.getAttribute('data-svg');
   var finish = function(markup){
-    if (!markup){ var l = box.querySelector('.load'); if (l) l.textContent = '預覽不可用'; return; }
+    if (!markup){ var l = box.querySelector('.load'); if (l) l.textContent = '预览不可用'; return; }
     var tmp = document.createElement('div');
     tmp.innerHTML = markup;                 // already sanitised above
     var node = tmp.firstChild;
@@ -551,14 +551,14 @@ function cardHTML(p, tagCat){
     + (tagCat ? '<span class="cat-tag">'+esc(tagCat.label)+'</span>' : '')
     + '<div class="thumb'+(state.thumbs?'':' nothumb')+'">'
     +   '<span class="ph"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.6v3.4M12 18v3.4M2.6 12H6M18 12h3.4M5.4 5.4l2.4 2.4M16.2 16.2l2.4 2.4M18.6 5.4l-2.4 2.4M7.8 16.2l-2.4 2.4"/></svg>'+hint+'</span>'
-    +   (state.thumbs ? '<span class="load">載入預覽…</span>' : '')
+    +   (state.thumbs ? '<span class="load">载入预览…</span>' : '')
     + '</div>'
     + '<div class="card-body">'
     +   '<h4>'+esc(p.name)+'</h4>'
     +   '<div class="card-model">'+esc(p.model || p.id)+'</div>'
     +   '<div class="card-foot">'
     +     (parts ? '<span class="pill">'+parts+' 件零件</span>' : '<span class="pill">BOM</span>')
-    +     '<span class="go">檢視爆炸圖 →</span>'
+    +     '<span class="go">检视爆炸图 →</span>'
     +   '</div>'
     + '</div></button>';
 }
@@ -616,7 +616,7 @@ function syncToggleAll(){
   var panels = view.querySelectorAll('.series');
   var allOpen = panels.length > 0;
   for (var i=0;i<panels.length;i++) if (!panels[i].classList.contains('open')) allOpen = false;
-  $('#toggle-all').textContent = allOpen ? '全部收合' : '全部展開';
+  $('#toggle-all').textContent = allOpen ? '全部收合' : '全部展开';
 }
 
 /* ---- render one category view ---- */
@@ -634,7 +634,7 @@ function renderView(cat){
     + '<div class="view-head">'
     +   '<span class="view-num">'+esc(cat.num)+'</span>'
     +   '<h2>'+esc(cat.label)+'</h2>'
-    +   '<span class="cnt">'+cat.products.length+' 項產品 · '+names.length+' 個級距 · '+totalParts+' 件零件</span>'
+    +   '<span class="cnt">'+cat.products.length+' 项产品 · '+names.length+' 个级距 · '+totalParts+' 件零件</span>'
     +   '<p>'+esc(cat.desc)+'</p>'
     + '</div>';
 
@@ -646,8 +646,8 @@ function renderView(cat){
     h += '<div class="series'+(open?' open':'')+'" data-key="'+esc(key)+'">'
       +  '<button class="series-head" type="button" aria-expanded="'+(open?'true':'false')+'">'
       +    '<span class="s-idx">'+String(i+1).padStart(2,'0')+'</span>'
-      +    '<span class="s-meta"><h3>'+esc(nm)+'<span class="badge">'+list.length+' 項</span></h3>'
-      +      '<p>'+sp+' 件零件 · 點擊'+(open?'收合':'展開')+'此級距</p></span>'
+      +    '<span class="s-meta"><h3>'+esc(nm)+'<span class="badge">'+list.length+' 项</span></h3>'
+      +      '<p>'+sp+' 件零件 · 点击'+(open?'收合':'展开')+'此级距</p></span>'
       +    '<span class="s-peek" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>'
       +    '<span class="chev" aria-hidden="true"><svg viewBox="0 0 14 14"><path d="M3 5.5L7 9.5l4-4"/></svg></span>'
       +  '</button>'
@@ -739,11 +739,11 @@ function renderStats(){
     nseries += Object.keys(s).length;
   });
   $('#hero-stats').innerHTML =
-      '<div class="stat"><b>'+np+'</b><span>項產品</span></div>'
-    + '<div class="stat"><b>'+ns+'</b><span>個系列</span></div>'
-    + '<div class="stat"><b>'+nseries+'</b><span>個級距</span></div>'
-    + '<div class="stat"><b>'+nparts+'</b><span>件可詢價零件</span></div>';
-  $('#foot-count').textContent = np + ' 項產品 · ' + nparts + ' 件零件';
+      '<div class="stat"><b>'+np+'</b><span>项产品</span></div>'
+    + '<div class="stat"><b>'+ns+'</b><span>个系列</span></div>'
+    + '<div class="stat"><b>'+nseries+'</b><span>个级距</span></div>'
+    + '<div class="stat"><b>'+nparts+'</b><span>件可询价零件</span></div>';
+  $('#foot-count').textContent = np + ' 项产品 · ' + nparts + ' 件零件';
 }
 
 /* ---- search across every category ---- */
@@ -782,11 +782,11 @@ function runSearch(q){
   searchEl.classList.add('on');
   if (!hits.length){
     searchEl.innerHTML = '<div class="state"><div class="ico">🔍</div><h3>找不到「'+esc(state.query)+'」</h3>'
-      + '<p>試試系列關鍵字（鋼索、鏈條、齒輪箱、吊鉤、馬達、小車）或直接點上方分類標籤。</p></div>';
+      + '<p>试试系列关键字（钢索、链条、齿轮箱、吊钩、马达、小车）或直接点上方分类标签。</p></div>';
     return;
   }
-  var html = '<div class="res-head"><h3 style="font-size:22px;font-weight:800">搜尋結果</h3>'
-    + '<span>'+hits.length+' 項符合「'+esc(state.query)+'」</span></div><div class="res-grid">';
+  var html = '<div class="res-head"><h3 style="font-size:22px;font-weight:800">搜寻结果</h3>'
+    + '<span>'+hits.length+' 项符合「'+esc(state.query)+'」</span></div><div class="res-grid">';
   hits.forEach(function(h){
     var c = cardHTML(h.p, h.cat);
     c = c.replace('<h4>'+esc(h.p.name)+'</h4>', '<h4>'+hl(h.p.name, state.query)+'</h4>');
@@ -811,8 +811,8 @@ function clearSearch(silent){
 function measureNav(){
   var nav = $('#nav');
   if (!nav) return;
-  // --nav-h 是「輸出」變數（只給 toolbar / scroll-padding 用），
-  // 絕不可回饋到 nav 自身版面，否則 ResizeObserver 會自我放大。
+  // --nav-h 是「输出」变数（只给 toolbar / scroll-padding 用），
+  // 绝不可回馈到 nav 自身版面，否则 ResizeObserver 会自我放大。
   var h = Math.min(220, Math.ceil(nav.getBoundingClientRect().height));
   if (h > 0 && h !== measureNav._last){
     measureNav._last = h;
@@ -898,8 +898,8 @@ function generateQR(){
     var ctx = canvas.getContext('2d');
     ctx.fillStyle = '#FAF9F5'; ctx.fillRect(0,0,size,size);
     ctx.fillStyle = '#87867F'; ctx.font = '11px sans-serif'; ctx.textAlign = 'center';
-    ctx.fillText('QR Code 載入失敗', size/2, size/2 - 10);
-    ctx.fillText('請複製網址', size/2, size/2 + 10);
+    ctx.fillText('QR Code 载入失败', size/2, size/2 - 10);
+    ctx.fillText('请复制网址', size/2, size/2 + 10);
   };
   img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=' + size + 'x' + size
           + '&data=' + encodeURIComponent(url) + '&margin=10';
@@ -907,7 +907,7 @@ function generateQR(){
 function sharePage(){
   var url = window.location.href;
   if (navigator.share){
-    navigator.share({ title:'EzBOM 零件詢價型錄', text:'冠亞起重機械爆炸圖與 BOM 零件型錄', url:url }).catch(function(){});
+    navigator.share({ title:'EzBOM 零件询价型录', text:'冠亚起重机械爆炸图与 BOM 零件型录', url:url }).catch(function(){});
     return;
   }
   if (navigator.clipboard && navigator.clipboard.writeText){
@@ -915,8 +915,8 @@ function sharePage(){
       var b = $('#share-btn');
       b.classList.add('ok'); b.textContent = '✅';
       setTimeout(function(){ b.classList.remove('ok'); b.textContent = '🔗'; }, 1900);
-    }).catch(function(){ prompt('請複製以下網址：', url); });
-  } else { prompt('請複製以下網址：', url); }
+    }).catch(function(){ prompt('请复制以下网址：', url); });
+  } else { prompt('请复制以下网址：', url); }
 }
 window.toggleQR = toggleQR;
 window.sharePage = sharePage;
@@ -924,8 +924,8 @@ window.sharePage = sharePage;
 /* ---- boot ---- */
 function fail(msg){
   loadingEl.className = 'state err';
-  loadingEl.innerHTML = '<div class="ico">⚠️</div><h3>無法載入產品型錄</h3><p>'+esc(msg)+'</p>'
-    + '<button class="retry" type="button" onclick="location.reload()">重新載入</button>';
+  loadingEl.innerHTML = '<div class="ico">⚠️</div><h3>无法载入产品型录</h3><p>'+esc(msg)+'</p>'
+    + '<button class="retry" type="button" onclick="location.reload()">重新载入</button>';
   if (window.EzBOMAnalytics) window.EzBOMAnalytics.error('Catalog load failed: '+msg, '', '', 0, 0);
 }
 
@@ -939,7 +939,7 @@ function boot(){
     var list = (manifest && manifest.products) || [];
     if (!list.length){
       loadingEl.className = 'state';
-      loadingEl.innerHTML = '<div class="ico">📦</div><h3>暫無產品</h3><p>請在 products.json 中加入產品後重新整理。</p>';
+      loadingEl.innerHTML = '<div class="ico">📦</div><h3>暂无产品</h3><p>请在 products.json 中加入产品后重新整理。</p>';
       return;
     }
     state.products = list;

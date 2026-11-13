@@ -3,37 +3,37 @@
     "topParts": [
       {
         "partNumber": "400095",
-        "name": "彈簧華司<M8>",
+        "name": "弹簧华司<M8>",
         "totalQty": 100,
         "orderCount": 1
       },
       {
         "partNumber": "400198",
-        "name": "C型扣環<R-47>",
+        "name": "C型扣环<R-47>",
         "totalQty": 90,
         "orderCount": 4
       },
       {
         "partNumber": "400008",
-        "name": "窩頭螺絲<M6×1.0×25L>",
+        "name": "窝头螺丝<M6×1.0×25L>",
         "totalQty": 60,
         "orderCount": 1
       },
       {
         "partNumber": "400013",
-        "name": "窩頭螺絲<M8×1.25×25L>",
+        "name": "窝头螺丝<M8×1.25×25L>",
         "totalQty": 50,
         "orderCount": 1
       },
       {
         "partNumber": "405563",
-        "name": "滾珠軸承<60052RS>",
+        "name": "滚珠轴承<60052RS>",
         "totalQty": 20,
         "orderCount": 2
       },
       {
         "partNumber": "407736",
-        "name": "滾珠軸承<6205>",
+        "name": "滚珠轴承<6205>",
         "totalQty": 20,
         "orderCount": 2
       },
@@ -45,7 +45,7 @@
       },
       {
         "partNumber": "400826",
-        "name": "滾珠軸承<6212 Z>",
+        "name": "滚珠轴承<6212 Z>",
         "totalQty": 14,
         "orderCount": 2
       },
@@ -57,26 +57,26 @@
       },
       {
         "partNumber": "400991",
-        "name": "C型扣環<R-110>",
+        "name": "C型扣环<R-110>",
         "totalQty": 10,
         "orderCount": 1
       }
     ],
     "topCustomers": [
       {
-        "name": "永豐機械",
+        "name": "永丰机械",
         "orderCount": 3,
         "totalQty": 82,
         "totalAmount": 7365.0
       },
       {
-        "name": "宏達傳動",
+        "name": "宏达传动",
         "orderCount": 2,
         "totalQty": 281,
         "totalAmount": 1617.5
       },
       {
-        "name": "冠杰工業",
+        "name": "冠杰工业",
         "orderCount": 2,
         "totalQty": 63,
         "totalAmount": 4277.5
@@ -123,81 +123,81 @@
     "hotParts": [
       {
         "partNumber": "400198",
-        "name": "C型扣環<R-47>",
+        "name": "C型扣环<R-47>",
         "totalQty": 90,
         "orderCount": 4,
         "customers": [
-          "永豐機械",
-          "冠杰工業",
-          "宏達傳動"
+          "永丰机械",
+          "冠杰工业",
+          "宏达传动"
         ],
         "lastPurchase": "2025-05-15",
         "frequency": 21.0
       },
       {
         "partNumber": "400095",
-        "name": "彈簧華司<M8>",
+        "name": "弹簧华司<M8>",
         "totalQty": 100,
         "orderCount": 1,
         "customers": [
-          "宏達傳動"
+          "宏达传动"
         ],
         "lastPurchase": "2025-03-12",
         "frequency": 11.0
       },
       {
         "partNumber": "400008",
-        "name": "窩頭螺絲<M6×1.0×25L>",
+        "name": "窝头螺丝<M6×1.0×25L>",
         "totalQty": 60,
         "orderCount": 1,
         "customers": [
-          "宏達傳動"
+          "宏达传动"
         ],
         "lastPurchase": "2025-03-12",
         "frequency": 7.0
       },
       {
         "partNumber": "405563",
-        "name": "滾珠軸承<60052RS>",
+        "name": "滚珠轴承<60052RS>",
         "totalQty": 20,
         "orderCount": 2,
         "customers": [
-          "永豐機械",
-          "宏達傳動"
+          "永丰机械",
+          "宏达传动"
         ],
         "lastPurchase": "2025-05-15",
         "frequency": 6.0
       },
       {
         "partNumber": "407736",
-        "name": "滾珠軸承<6205>",
+        "name": "滚珠轴承<6205>",
         "totalQty": 20,
         "orderCount": 2,
         "customers": [
-          "永豐機械",
-          "冠杰工業"
+          "永丰机械",
+          "冠杰工业"
         ],
         "lastPurchase": "2025-04-01",
         "frequency": 6.0
       },
       {
         "partNumber": "400013",
-        "name": "窩頭螺絲<M8×1.25×25L>",
+        "name": "窝头螺丝<M8×1.25×25L>",
         "totalQty": 50,
         "orderCount": 1,
         "customers": [
-          "宏達傳動"
+          "宏达传动"
         ],
         "lastPurchase": "2025-03-12",
         "frequency": 6.0
       },
       {
         "partNumber": "400826",
-        "name": "滾珠軸承<6212 Z>",
+        "name": "滚珠轴承<6212 Z>",
         "totalQty": 14,
         "orderCount": 2,
         "customers": [
-          "宏達傳動",
+          "宏达传动",
           "大明重工"
         ],
         "lastPurchase": "2025-05-15",
@@ -205,11 +205,11 @@
       },
       {
         "partNumber": "205394",
-        "name": "第三齒輪",
+        "name": "第三齿轮",
         "totalQty": 8,
         "orderCount": 2,
         "customers": [
-          "冠杰工業",
+          "冠杰工业",
           "大明重工"
         ],
         "lastPurchase": "2025-05-06",
@@ -217,11 +217,11 @@
       },
       {
         "partNumber": "205393",
-        "name": "第二齒輪",
+        "name": "第二齿轮",
         "totalQty": 7,
         "orderCount": 2,
         "customers": [
-          "永豐機械",
+          "永丰机械",
           "大明重工"
         ],
         "lastPurchase": "2025-05-06",
@@ -229,11 +229,11 @@
       },
       {
         "partNumber": "200265",
-        "name": "第四齒輪",
+        "name": "第四齿轮",
         "totalQty": 7,
         "orderCount": 2,
         "customers": [
-          "永豐機械",
+          "永丰机械",
           "大明重工"
         ],
         "lastPurchase": "2025-05-06",

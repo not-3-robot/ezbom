@@ -1,10 +1,10 @@
 /**
- * EzBOM Analytics — Cloudflare Worker 版 + localStorage 備援
+ * EzBOM Analytics — Cloudflare Worker 版 + localStorage 备援
  *
- * 事件同時發送至遠端 Worker 與 localStorage。
- * 管理員儀表板優先讀取 Worker 彙總，Worker 未部署時降級至 localStorage。
+ * 事件同时发送至远端 Worker 与 localStorage。
+ * 管理员仪表板优先读取 Worker 汇总，Worker 未部署时降级至 localStorage。
  *
- * Worker 部署後，在 admin.html 設定：<script>var EZBOM_WORKER_URL='...';</script>
+ * Worker 部署后，在 admin.html 设定：<script>var EZBOM_WORKER_URL='...';</script>
  */
 (function () {
   'use strict';
@@ -76,7 +76,7 @@
     pushRemote(evt);
   }
 
-  // /stats 端點的 API key（需與 Worker wrangler.toml 中的 STATS_API_KEY 一致）
+  // /stats 端点的 API key（需与 Worker wrangler.toml 中的 STATS_API_KEY 一致）
   var STATS_API_KEY = (typeof EZBOM_STATS_KEY !== 'undefined') ? EZBOM_STATS_KEY : '';
 
   function fetchRemoteSummary(callback) {
@@ -164,11 +164,11 @@
     getSummary: function(callback) {
       fetchRemoteSummary(function(remoteData) {
         if (remoteData) {
-          // Worker 有資料時直接使用，不重複加 localStorage（避免雙重計算）
-          // localStorage 中的事件已同步發送至 Worker，兩者不重疊加總
+          // Worker 有资料时直接使用，不重复加 localStorage（避免双重计算）
+          // localStorage 中的事件已同步发送至 Worker，两者不重叠加总
           callback(remoteData);
         } else {
-          // Worker 不可用時，降級使用 localStorage
+          // Worker 不可用时，降级使用 localStorage
           callback(buildLocalSummary());
         }
       });

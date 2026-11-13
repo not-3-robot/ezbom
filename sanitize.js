@@ -1,8 +1,8 @@
 /**
- * EzBOM Sanitize — XSS 防護共用模組
+ * EzBOM Sanitize — XSS 防护共用模组
  *
- * 所有 innerHTML 操作前應先透過此模組轉義使用者可控資料。
- * 零依賴，可獨立載入。
+ * 所有 innerHTML 操作前应先透过此模组转义使用者可控资料。
+ * 零依赖，可独立载入。
  */
 (function () {
   'use strict';
@@ -19,7 +19,7 @@
   };
 
   /**
-   * HTML 轉義 — 將特殊字元轉為 HTML 實體
+   * HTML 转义 — 将特殊字元转为 HTML 实体
    * @param {string} str 原始字串
    * @returns {string} 安全字串
    */
@@ -31,13 +31,13 @@
   }
 
   /**
-   * 安全 innerHTML — 先轉義變數再拼接 HTML
+   * 安全 innerHTML — 先转义变数再拼接 HTML
    *
    * 用法：
    *   el.innerHTML = EzBOMSanitize.safeHTML('<div>${name}</div>', { name: userInput });
    *
-   * @param {string} template 含 ${key} 佔位符的模板
-   * @param {object} values 鍵值對應
+   * @param {string} template 含 ${key} 占位符的模板
+   * @param {object} values 键值对应
    * @returns {string} 安全 HTML 字串
    */
   function safeHTML(template, values) {
@@ -53,19 +53,19 @@
   }
 
   /**
-   * 安全 textContent 寫入
+   * 安全 textContent 写入
    * @param {Element} el DOM 元素
-   * @param {string} text 文字內容
+   * @param {string} text 文字内容
    */
   function safeText(el, text) {
     if (el) el.textContent = text != null ? String(text) : '';
   }
 
   /**
-   * 安全設定屬性值
+   * 安全设定属性值
    * @param {Element} el DOM 元素
-   * @param {string} attr 屬性名
-   * @param {string} value 屬性值
+   * @param {string} attr 属性名
+   * @param {string} value 属性值
    */
   function safeAttr(el, attr, value) {
     if (el && value != null) {
@@ -74,7 +74,7 @@
   }
 
   // ============================================================
-  // 公開 API
+  // 公开 API
   // ============================================================
   window.EzBOMSanitize = {
     escapeHtml: escapeHtml,
