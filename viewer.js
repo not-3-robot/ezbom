@@ -1012,10 +1012,13 @@
   function vKey() {
     return 'ezbom_view_' + (new URLSearchParams(location.search).get('product') || 'default');
   }
+  var vHadSaved = false;
   function vLoad() {
+    vHadSaved = false;
     try {
       var s = JSON.parse(localStorage.getItem(vKey()) || 'null');
       if (s) {
+        vHadSaved = true;
         ['zoom','rot','panX','panY','stroke'].forEach(function(k){
           if (typeof s[k] === 'number' && isFinite(s[k])) view[k] = s[k];
         });
@@ -1026,7 +1029,56 @@
     } catch (e) {}
     view.zoom = vClamp(view.zoom, svgZoomMin, svgZoomMax);
     view.rot = ((Math.round(view.rot) % 360) + 360) % 360;
-    view.stroke = vClamp(view.stroke, 0.2, 6);
+    view.stroke = vClamp(view.stroke, 0.1, 6);
+  }
+
+  // 預設線寬＝該圖自己烘好的筆畫（dwg2drawing --stroke 逐圖調過），
+  // 換算成螢幕像素後取用；沒存過使用者設定時才自動推導。
+  // 全域固定 1.6px 會把密集圖糊掉：電器160 實測筆畫/線段中位長比
+  // 12.24 倍（舊版 2.56），細齒與剖面線會黏成實心黑塊。
+  function vAutoStroke() {
+    if (!vSvg || !(vBaseScale > 1e-6)) return;
+    var shapes = vSvg.querySelectorAll('path,circle,rect,ellipse,line');
+    var vals = [];
+    for (var i = 0; i < shapes.length && vals.length < 12; i++) {
+      var a = parseFloat(shapes[i].getAttribute('stroke-width'));
+      if (isFinite(a) && a > 0) vals.push(a);
+    }
+    if (!vals.length) return;
+    vals.sort(function(a, b){ return a - b; });
+    var baked = vals[Math.floor(vals.length / 2)];
+    var s = vClamp(+(baked * vBaseScale).toFixed(2), 0.25, 2.0);
+    // 再用「筆畫／線段長度比」夾上限：baked 值是為某個顯示尺度調的，
+    // 換到手機寬度可能過粗（ch190-motorbody 實測 9.88 倍會糊）。
+    var seg = vSegRefPx();
+    if (seg && seg > 1e-4) s = Math.min(s, +(seg * 3.2).toFixed(2));
+    view.stroke = vClamp(s, 0.25, 2.0);
+  }
+
+  // 取樣估線段長度（螢幕 px）。用 p60 而非中位數：平滑曲線細分會把
+  // 中位數壓小（chain190／motor220 實證），p60 較貼近真實輪廓段。
+  function vSegRefPx() {
+    if (!vSvg || !(vBaseScale > 1e-6)) return null;
+    var paths = vSvg.querySelectorAll('path');
+    if (!paths.length) return null;
+    var lens = [];
+    var step = Math.max(1, Math.floor(paths.length / 24));
+    for (var i = 0; i < paths.length && lens.length < 3000; i += step) {
+      var p = paths[i], L = 0;
+      try { L = p.getTotalLength(); } catch (e) { continue; }
+      if (!L) continue;
+      var n = Math.min(36, Math.max(8, Math.floor(L / 4)));
+      var prev = null;
+      for (var k = 0; k <= n; k++) {
+        var pt;
+        try { pt = p.getPointAtLength(L * k / n); } catch (e) { break; }
+        if (prev) lens.push(Math.hypot(pt.x - prev.x, pt.y - prev.y));
+        prev = pt;
+      }
+    }
+    if (!lens.length) return null;
+    lens.sort(function(a, b){ return a - b; });
+    return lens[Math.floor(lens.length * 0.6)] * vBaseScale;
   }
   function vSave() {
     try { localStorage.setItem(vKey(), JSON.stringify(view)); } catch (e) {}
@@ -1290,8 +1342,8 @@
       view.stroke = 2.6; vApply(false);
     }, 'ezc-wide'));
     g3.appendChild(row3);
-    vUI.stroke = vSlider(0.2, 6, 0.1, view.stroke, function(v){
-      view.stroke = vClamp(v, 0.2, 6); vApply(false);
+    vUI.stroke = vSlider(0.1, 6, 0.05, view.stroke, function(v){
+      view.stroke = vClamp(v, 0.1, 6); vApply(false);
     });
     vUI.stroke.setAttribute('aria-label', '線條粗細');
     g3.appendChild(vUI.stroke);
@@ -1337,6 +1389,7 @@
     panel.appendChild(dock);
     vInstallGestures(container, svg);
     vMeasureBase();
+    if (!vHadSaved) vAutoStroke();
     vApply(false);
   }
 
