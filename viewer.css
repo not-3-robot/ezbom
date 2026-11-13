@@ -447,10 +447,22 @@ svg.ez-cluster-sel .svg-part.hovered line {
 }
 .svg-container svg .ez-hover-path {
     stroke-width: calc(var(--ez-stroke, 2) * 1.6px);
-    opacity: .92;
+    opacity: .95;
+    /* 2026-11-14 修复「鼠标碰到后效果没了」：丛集模式关掉群组级 :hover 光晕，
+       改由覆盖层画，但 hover 覆盖层此前只有加粗描边、无光晕无放大（上次
+       2026-11-13 只补了 .ez-sel-path）。补回 glow + 微放大 + 淡入，
+       比选取（scale 1.08 / .75）轻一阶，hover 预览与确认选取层次分明。 */
+    filter: drop-shadow(0 0 7px rgba(217, 119, 87, .6));
+    transform: scale(1.05);
+    animation: ezHoverIn .14s ease-out;
+}
+@keyframes ezHoverIn {
+    from { opacity: 0; transform: scale(1); }
+    to   { opacity: .95; transform: scale(1.05); }
 }
 @media (max-width: 768px) {
     .svg-container svg .ez-sel-path { filter: none; }
+    .svg-container svg .ez-hover-path { filter: none; }
 }
 
 /* 线宽单一来源：--ez-stroke 由 vApplyStroke 换算成使用者单位后写在 svg 上，
