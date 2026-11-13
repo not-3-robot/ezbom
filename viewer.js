@@ -908,11 +908,13 @@
     var container = document.querySelector('.svg-container');
     if (!svg) return;
 
-    var isMobile = window.innerWidth <= 768;
+    // 100% 縮放＝完整貼合容器：容器 overflow:hidden（為了自製平移），
+    // 若 SVG 只限寬不限高，直式圖算出的高度會超過容器而被裁掉。
     svg.style.width = '100%';
-    svg.style.height = isMobile ? 'auto' : 'auto';
-    if (!isMobile) svg.style.maxHeight = '100%';
-    svg.style.preserveAspectRatio = isMobile ? 'xMinYMin meet' : 'xMidYMid meet';
+    svg.style.height = 'auto';
+    svg.style.maxWidth = '100%';
+    svg.style.maxHeight = '100%';
+    svg.style.preserveAspectRatio = 'xMidYMid meet';
 
     // 視圖控制（縮放／旋轉／線寬／顯示／輸出）——桌面與手機都給
     addViewControls(container, svg);
