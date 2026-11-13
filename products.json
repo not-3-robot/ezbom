@@ -1,14 +1,214 @@
 {
-  "title": "齒輪箱零件詢價系統",
-  "emailTo": "",
-  "products": [
-    {
-      "id": "p-type",
-      "name": "P型齒輪箱",
-      "model": "P-TYPE",
-      "svg": "products/p-type/drawing.svg",
-      "bom": "products/p-type/bom.csv",
-      "emailTo": ""
-    }
-  ]
+ "title": "齒輪箱零件詢價系統",
+ "emailTo": "",
+ "products": [
+  {
+   "id": "p-type",
+   "name": "P型齒輪箱",
+   "model": "P-TYPE",
+   "svg": "products/p-type/drawing.svg",
+   "bom": "products/p-type/bom.csv",
+   "emailTo": ""
+  },
+  {
+   "id": "wr075-gearbox-b-ba",
+   "name": "齒輪箱 b.ba",
+   "model": "鋼索式 0.75-5t",
+   "svg": "products/wr075-gearbox-b-ba/drawing.svg",
+   "bom": "products/wr075-gearbox-b-ba/bom.csv",
+   "emailTo": ""
+  },
+  {
+   "id": "wr075-gearbox-g",
+   "name": "齒輪箱 g",
+   "model": "鋼索式 0.75-5t",
+   "svg": "products/wr075-gearbox-g/drawing.svg",
+   "bom": "products/wr075-gearbox-g/bom.csv",
+   "emailTo": ""
+  },
+  {
+   "id": "wr075-gearbox-k",
+   "name": "齒輪箱 k",
+   "model": "鋼索式 0.75-5t",
+   "svg": "products/wr075-gearbox-k/drawing.svg",
+   "bom": "products/wr075-gearbox-k/bom.csv",
+   "emailTo": ""
+  },
+  {
+   "id": "wr075-drumseat-trolley",
+   "name": "卷輪座.小車",
+   "model": "鋼索式 0.75-5t",
+   "svg": "products/wr075-drumseat-trolley/drawing.svg",
+   "bom": "products/wr075-drumseat-trolley/bom.csv",
+   "emailTo": ""
+  },
+  {
+   "id": "wr075-drumseat-2-5",
+   "name": "卷輪座 2-5",
+   "model": "鋼索式 0.75-5t",
+   "svg": "products/wr075-drumseat-2-5/drawing.svg",
+   "bom": "products/wr075-drumseat-2-5/bom.csv",
+   "emailTo": ""
+  },
+  {
+   "id": "wr740-gearbox-b-ea",
+   "name": "齒輪箱 b.ea",
+   "model": "鋼索式 7-40t",
+   "svg": "products/wr740-gearbox-b-ea/drawing.svg",
+   "bom": "products/wr740-gearbox-b-ea/bom.csv",
+   "emailTo": ""
+  },
+  {
+   "id": "wr740-gearbox-ca-da-fa",
+   "name": "齒輪箱 ca.da.fa",
+   "model": "鋼索式 7-40t",
+   "svg": "products/wr740-gearbox-ca-da-fa/drawing.svg",
+   "bom": "products/wr740-gearbox-ca-da-fa/bom.csv",
+   "emailTo": ""
+  },
+  {
+   "id": "wr740-drumseat-trolley-7-10",
+   "name": "卷輪座.小車 7.5-10",
+   "model": "鋼索式 7-40t",
+   "svg": "products/wr740-drumseat-trolley-7-10/drawing.svg",
+   "bom": "products/wr740-drumseat-trolley-7-10/bom.csv",
+   "emailTo": ""
+  },
+  {
+   "id": "wr740-drumseat-30",
+   "name": "卷輪座 30",
+   "model": "鋼索式 7-40t",
+   "svg": "products/wr740-drumseat-30/drawing.svg",
+   "bom": "products/wr740-drumseat-30/bom.csv",
+   "emailTo": ""
+  },
+  {
+   "id": "wr740-drumseat-7-20",
+   "name": "卷輪座 7.5-20",
+   "model": "鋼索式 7-40t",
+   "svg": "products/wr740-drumseat-7-20/drawing.svg",
+   "bom": "products/wr740-drumseat-7-20/bom.csv",
+   "emailTo": ""
+  },
+  {
+   "id": "wr740-motor-220",
+   "name": "馬達 220",
+   "model": "鋼索式 7-40t",
+   "svg": "products/wr740-motor-220/drawing.svg",
+   "bom": "products/wr740-motor-220/bom.csv",
+   "emailTo": ""
+  },
+  {
+   "id": "wr740-motor-260-310",
+   "name": "馬達 260.310",
+   "model": "鋼索式 7-40t",
+   "svg": "products/wr740-motor-260-310/drawing.svg",
+   "bom": "products/wr740-motor-260-310/bom.csv",
+   "emailTo": ""
+  },
+  {
+   "id": "wr740-lowerhook-15-20",
+   "name": "下吊鉤 15.20",
+   "model": "鋼索式 7-40t",
+   "svg": "products/wr740-lowerhook-15-20/drawing.svg",
+   "bom": "products/wr740-lowerhook-15-20/bom.csv",
+   "emailTo": ""
+  },
+  {
+   "id": "wr740-lowerhook-30",
+   "name": "下吊鉤 30",
+   "model": "鋼索式 7-40t",
+   "svg": "products/wr740-lowerhook-30/drawing.svg",
+   "bom": "products/wr740-lowerhook-30/bom.csv",
+   "emailTo": ""
+  },
+  {
+   "id": "wr740-lowerhook-7-10",
+   "name": "下吊鉤 7.5-10",
+   "model": "鋼索式 7-40t",
+   "svg": "products/wr740-lowerhook-7-10/drawing.svg",
+   "bom": "products/wr740-lowerhook-7-10/bom.csv",
+   "emailTo": ""
+  },
+  {
+   "id": "ch160-ushort-trolley",
+   "name": "超短小車",
+   "model": "鏈條式 160",
+   "svg": "products/ch160-ushort-trolley/drawing.svg",
+   "bom": "products/ch160-ushort-trolley/bom.csv",
+   "emailTo": ""
+  },
+  {
+   "id": "ch160-gearbox",
+   "name": "齒輪箱",
+   "model": "鏈條式 160",
+   "svg": "products/ch160-gearbox/drawing.svg",
+   "bom": "products/ch160-gearbox/bom.csv",
+   "emailTo": ""
+  },
+  {
+   "id": "ch160-electric",
+   "name": "電器",
+   "model": "鏈條式 160",
+   "svg": "products/ch160-electric/drawing.svg",
+   "bom": "products/ch160-electric/bom.csv",
+   "emailTo": ""
+  },
+  {
+   "id": "ch160-hook",
+   "name": "吊鉤",
+   "model": "鏈條式 160",
+   "svg": "products/ch160-hook/drawing.svg",
+   "bom": "products/ch160-hook/bom.csv",
+   "emailTo": ""
+  },
+  {
+   "id": "ch160-motorshell",
+   "name": "馬達機殼",
+   "model": "鏈條式 160",
+   "svg": "products/ch160-motorshell/drawing.svg",
+   "bom": "products/ch160-motorshell/bom.csv",
+   "emailTo": ""
+  },
+  {
+   "id": "ch190-ushort-trolley",
+   "name": "超短小車",
+   "model": "鏈條式 190",
+   "svg": "products/ch190-ushort-trolley/drawing.svg",
+   "bom": "products/ch190-ushort-trolley/bom.csv",
+   "emailTo": ""
+  },
+  {
+   "id": "ch190-gearbox",
+   "name": "齒輪箱",
+   "model": "鏈條式 190",
+   "svg": "products/ch190-gearbox/drawing.svg",
+   "bom": "products/ch190-gearbox/bom.csv",
+   "emailTo": ""
+  },
+  {
+   "id": "ch190-electricbox",
+   "name": "電器箱",
+   "model": "鏈條式 190",
+   "svg": "products/ch190-electricbox/drawing.svg",
+   "bom": "products/ch190-electricbox/bom.csv",
+   "emailTo": ""
+  },
+  {
+   "id": "ch190-chain",
+   "name": "鏈條",
+   "model": "鏈條式 190",
+   "svg": "products/ch190-chain/drawing.svg",
+   "bom": "products/ch190-chain/bom.csv",
+   "emailTo": ""
+  },
+  {
+   "id": "ch190-motorbody",
+   "name": "馬達機體",
+   "model": "鏈條式 190",
+   "svg": "products/ch190-motorbody/drawing.svg",
+   "bom": "products/ch190-motorbody/bom.csv",
+   "emailTo": ""
+  }
+ ]
 }
