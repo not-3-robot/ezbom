@@ -1221,34 +1221,29 @@
   }
 
   // ========================================================================
-  // 10b. 視圖控制：縮放／旋轉／平移／線寬／顯示／輸出
-  // 常駐控制區，桌面右側 dock、手機圖面下方橫向滑軌，兩者同一套狀態。
+  // 10b. 視圖控制（2026-11-13 使用者裁定極簡化）：
+  // 控制面板全數移除——縮放走直接手勢（滾輪／雙擊／雙指 pinch），
+  // 只留一顆浮動旋轉鈕，每點一次 +90°，只在 0/90/180/270 四檔循環。
   // ========================================================================
-  var view = { zoom:1, rot:0, panX:0, panY:0, stroke:1.6, labels:true, isolate:false, grid:false };
+  var view = { zoom:1, rot:0, panX:0, panY:0, stroke:1.6 };  // stroke＝自動推導，無使用者控制
   var vSvg = null, vBox = null, vUI = {}, vBaseW = 0, vBaseH = 0, vBaseScale = 0, vRaf = 0;
 
   function vClamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
   function vKey() {
     return 'ezbom_view_' + (new URLSearchParams(location.search).get('product') || 'default');
   }
-  var vHadSaved = false;
   function vLoad() {
-    vHadSaved = false;
     try {
       var s = JSON.parse(localStorage.getItem(vKey()) || 'null');
       if (s) {
-        vHadSaved = true;
-        ['zoom','rot','panX','panY','stroke'].forEach(function(k){
+        ['zoom','rot','panX','panY'].forEach(function(k){
           if (typeof s[k] === 'number' && isFinite(s[k])) view[k] = s[k];
-        });
-        ['labels','isolate','grid'].forEach(function(k){
-          if (typeof s[k] === 'boolean') view[k] = s[k];
         });
       }
     } catch (e) {}
     view.zoom = vClamp(view.zoom, svgZoomMin, svgZoomMax);
-    view.rot = ((Math.round(view.rot) % 360) + 360) % 360;
-    view.stroke = vClamp(view.stroke, 0.1, 6);
+    // 旋轉只有 90/180/270/360 四檔：舊手勢或舊設定殘留的任意角度一律吸附到最近的 90°
+    view.rot = (((Math.round(view.rot / 90) * 90) % 360) + 360) % 360;
   }
 
   // 預設線寬＝該圖自己烘好的筆畫（dwg2drawing --stroke 逐圖調過），
@@ -1350,9 +1345,6 @@
     vSvg.style.transform = 'translate(' + view.panX.toFixed(1) + 'px,' + view.panY.toFixed(1) + 'px) '
                          + 'scale(' + view.zoom.toFixed(3) + ') rotate(' + view.rot + 'deg)';
     vApplyStroke();
-    vBox.classList.toggle('ez-grid', !!view.grid);
-    vBox.classList.toggle('ez-isolate', !!view.isolate);
-    vBox.classList.toggle('ez-nolabels', !view.labels);
     vBox.classList.toggle('ez-moved', view.zoom > 1.02 || view.panX !== 0 || view.panY !== 0);
     vSync();
     if (vRaf) cancelAnimationFrame(vRaf);
@@ -1366,144 +1358,21 @@
   }
 
   function vSync() {
-    if (vUI.zoom) { vUI.zoom.value = String(view.zoom); }
-    if (vUI.zoomOut) vUI.zoomOut.textContent = Math.round(view.zoom * 100) + '%';
-    if (vUI.rot) vUI.rot.value = String(view.rot);
-    if (vUI.rotOut) vUI.rotOut.textContent = view.rot + '°';
-    if (vUI.stroke) vUI.stroke.value = String(view.stroke);
-    if (vUI.strokeOut) vUI.strokeOut.textContent = view.stroke.toFixed(1) + 'px';
-    ['labels','isolate','grid'].forEach(function(k){
-      if (vUI[k]) vUI[k].setAttribute('aria-pressed', view[k] ? 'true' : 'false');
-    });
+    if (vUI.rot) {
+      vUI.rot.setAttribute('aria-label', '旋轉圖面（目前 ' + view.rot + '°，點擊再轉 90°）');
+      var badge = vUI.rot.querySelector('.ez-rot-deg');
+      if (badge) badge.textContent = view.rot === 0 ? '' : view.rot + '°';
+      vUI.rot.classList.toggle('is-rotated', view.rot !== 0);
+    }
   }
 
-  function vZoom(d) { view.zoom = vClamp(view.zoom + d, svgZoomMin, svgZoomMax); vApply(true); }
   function vRotate(d) {
     view.rot = ((Math.round(view.rot + d) % 360) + 360) % 360;
     vApply(true);
   }
-  function vReset() {
-    view.zoom = 1; view.rot = 0; view.panX = 0; view.panY = 0;
-    vApply(true);
-    showToast('視圖已重置');
-  }
-  // 貼合：把「旋轉後」的外框縮到剛好塞進容器（橫式轉直式時最需要）
-  function vFit() {
-    if (!vSvg || !vBaseW) return;
-    var r = view.rot * Math.PI / 180;
-    var rw = Math.abs(vBaseW * Math.cos(r)) + Math.abs(vBaseH * Math.sin(r));
-    var rh = Math.abs(vBaseW * Math.sin(r)) + Math.abs(vBaseH * Math.cos(r));
-    var cw = vBox.clientWidth, ch = vBox.clientHeight;
-    if (!rw || !rh || !cw || !ch) return;
-    view.zoom = vClamp(Math.min(cw / rw, ch / rh) * 0.96, svgZoomMin, svgZoomMax);
-    view.panX = 0; view.panY = 0;
-    vApply(true);
-    showToast('已貼合視窗 ' + Math.round(view.zoom * 100) + '%');
-  }
 
-  function vDownload(name, blob) {
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement('a');
-    a.href = url; a.download = name;
-    document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
-  }
-
-  // 匯出：把目前線寬與旋轉烘進檔案（旋转用包覆 g + 重算 viewBox）
-  function vExportSVG() {
-    var NS = 'http://www.w3.org/2000/svg';
-    var clone = vSvg.cloneNode(true);
-    clone.removeAttribute('style'); clone.removeAttribute('class');
-    var vb = vSvg.viewBox.baseVal;
-    var w = vb.width, h = vb.height;
-    var r = view.rot * Math.PI / 180;
-    var cw = Math.abs(w * Math.cos(r)) + Math.abs(h * Math.sin(r));
-    var ch = Math.abs(w * Math.sin(r)) + Math.abs(h * Math.cos(r));
-    var cx = vb.x + w / 2, cy = vb.y + h / 2;
-    var wrap = document.createElementNS(NS, 'g');
-    while (clone.firstChild) wrap.appendChild(clone.firstChild);
-    wrap.setAttribute('transform', 'translate(' + (cw / 2 - cx).toFixed(2) + ','
-      + (ch / 2 - cy).toFixed(2) + ') rotate(' + view.rot + ' ' + cx.toFixed(2) + ' ' + cy.toFixed(2) + ')');
-    var bg = document.createElementNS(NS, 'rect');
-    bg.setAttribute('x','0'); bg.setAttribute('y','0');
-    bg.setAttribute('width', String(cw)); bg.setAttribute('height', String(ch));
-    bg.setAttribute('fill','#FFFFFF');
-    clone.appendChild(bg); clone.appendChild(wrap);
-    clone.setAttribute('viewBox', '0 0 ' + cw.toFixed(2) + ' ' + ch.toFixed(2));
-    clone.setAttribute('width', String(Math.round(cw)));
-    clone.setAttribute('height', String(Math.round(ch)));
-    var sw = (view.stroke * vUnitsPerPx()).toFixed(3);
-    var shapes = clone.querySelectorAll('path,circle,rect,ellipse,line,polyline,polygon');
-    for (var i = 0; i < shapes.length; i++) {
-      var s = shapes[i];
-      s.removeAttribute('style'); s.removeAttribute('class');
-      s.setAttribute('stroke', '#141413');
-      s.setAttribute('stroke-width', sw);
-      s.setAttribute('fill', 'none');
-    }
-    var gs = clone.querySelectorAll('g');
-    for (var j = 0; j < gs.length; j++) gs[j].removeAttribute('class');
-    return { text: new XMLSerializer().serializeToString(clone), w: cw, h: ch };
-  }
-
-  function vSaveSVG() {
-    var o = vExportSVG();
-    var pid = new URLSearchParams(location.search).get('product') || 'drawing';
-    vDownload(pid + '_' + view.rot + 'deg.svg', new Blob([o.text], { type:'image/svg+xml;charset=utf-8' }));
-    showToast('已下載 SVG');
-  }
-
-  function vSavePNG() {
-    var o = vExportSVG();
-    var pid = new URLSearchParams(location.search).get('product') || 'drawing';
-    var scale = Math.min(3, Math.max(1, 2400 / Math.max(o.w, o.h)));
-    var img = new Image();
-    var url = URL.createObjectURL(new Blob([o.text], { type:'image/svg+xml;charset=utf-8' }));
-    img.onload = function() {
-      var c = document.createElement('canvas');
-      c.width = Math.round(o.w * scale); c.height = Math.round(o.h * scale);
-      var ctx = c.getContext('2d');
-      ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, c.width, c.height);
-      ctx.drawImage(img, 0, 0, c.width, c.height);
-      URL.revokeObjectURL(url);
-      c.toBlob(function(b){
-        if (b) { vDownload(pid + '_' + view.rot + 'deg.png', b); showToast('已下載 PNG'); }
-        else showToast('PNG 產生失敗');
-      }, 'image/png');
-    };
-    img.onerror = function(){ URL.revokeObjectURL(url); showToast('PNG 產生失敗'); };
-    img.src = url;
-  }
-
-  function vBtn(label, title, fn, cls) {
-    var b = document.createElement('button');
-    b.type = 'button'; b.className = 'ezc-btn' + (cls ? ' ' + cls : '');
-    b.innerHTML = label; b.title = title; b.setAttribute('aria-label', title);
-    b.addEventListener('click', fn);
-    return b;
-  }
-  function vGroup(title) {
-    var g = document.createElement('div');
-    g.className = 'ezc-group';
-    var t = document.createElement('span');
-    t.className = 'ezc-title'; t.textContent = title;
-    g.appendChild(t);
-    return g;
-  }
-  function vSlider(min, max, step, val, onInput, cls) {
-    var s = document.createElement('input');
-    s.type = 'range'; s.min = String(min); s.max = String(max);
-    s.step = String(step); s.value = String(val);
-    s.className = 'ezc-range' + (cls ? ' ' + cls : '');
-    s.addEventListener('input', function(){ onInput(parseFloat(this.value)); });
-    return s;
-  }
-  function vOut(txt) {
-    var o = document.createElement('span');
-    o.className = 'ezc-out'; o.textContent = txt;
-    return o;
-  }
-
+  // 視圖控制安裝：只掛一顆浮動旋轉鈕（+90° 循環）＋手勢；
+  // 縮放／平移全走直接觸碰（滾輪、雙擊、單指拖曳、雙指 pinch）。
   function addViewControls(container, svg) {
     vSvg = svg; vBox = container; vUI = {};
     var br = svg.getBoundingClientRect();
@@ -1511,106 +1380,23 @@
     vBaseH = br.height || svg.clientHeight || 1;
     vLoad();
 
-    var scope = document.getElementById('svg-panel') || container.parentNode || container;
-    var old = scope.querySelector('.ezc-dock');
+    var old = container.querySelector('.ez-rot');
     if (old) old.remove();
-    var dock = document.createElement('div');
-    dock.className = 'ezc-dock';
-
-    // ── 視圖：縮放 ──
-    var g1 = vGroup('縮放');
-    var row1 = document.createElement('div'); row1.className = 'ezc-row';
-    row1.appendChild(vBtn('−', '縮小', function(){ vZoom(-svgZoomStep); }));
-    vUI.zoomOut = vOut(Math.round(view.zoom * 100) + '%');
-    row1.appendChild(vUI.zoomOut);
-    row1.appendChild(vBtn('+', '放大', function(){ vZoom(svgZoomStep); }));
-    g1.appendChild(row1);
-    vUI.zoom = vSlider(svgZoomMin, svgZoomMax, 0.05, view.zoom, function(v){
-      view.zoom = vClamp(v, svgZoomMin, svgZoomMax); vApply(false);
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'ez-rot';
+    btn.innerHTML = '\u27f3<span class="ez-rot-deg"></span>';
+    btn.title = '旋轉 90\u00b0';
+    btn.addEventListener('click', function(ev) {
+      ev.stopPropagation();
+      vRotate(90);
     });
-    vUI.zoom.setAttribute('aria-label', '縮放比例');
-    g1.appendChild(vUI.zoom);
-    dock.appendChild(g1);
+    container.appendChild(btn);
+    vUI.rot = btn;
 
-    // ── 旋轉 ──
-    var g2 = vGroup('旋轉');
-    var row2 = document.createElement('div'); row2.className = 'ezc-row';
-    row2.appendChild(vBtn('⟲', '逆時針 90°', function(){ vRotate(-90); }));
-    vUI.rotOut = vOut(view.rot + '°');
-    row2.appendChild(vUI.rotOut);
-    row2.appendChild(vBtn('⟳', '順時針 90°', function(){ vRotate(90); }));
-    g2.appendChild(row2);
-    vUI.rot = vSlider(0, 359, 1, view.rot, function(v){
-      view.rot = Math.round(v); vApply(false);
-    });
-    vUI.rot.setAttribute('aria-label', '旋轉角度');
-    g2.appendChild(vUI.rot);
-    var row2b = document.createElement('div'); row2b.className = 'ezc-row';
-    row2b.appendChild(vBtn('180°', '翻轉 180°', function(){ vRotate(180); }, 'ezc-wide'));
-    row2b.appendChild(vBtn('貼合', '貼合視窗', vFit, 'ezc-wide'));
-    g2.appendChild(row2b);
-    dock.appendChild(g2);
-
-    // ── 線條 ──
-    var g3 = vGroup('線寬');
-    var row3 = document.createElement('div'); row3.className = 'ezc-row';
-    vUI.strokeOut = vOut(view.stroke.toFixed(1) + 'px');
-    row3.appendChild(vUI.strokeOut);
-    row3.appendChild(vBtn('細', '細線（細齒／剖面圖）', function(){
-      view.stroke = 0.6; vApply(false);
-    }, 'ezc-wide'));
-    row3.appendChild(vBtn('粗', '粗線（淡圖加強）', function(){
-      view.stroke = 2.6; vApply(false);
-    }, 'ezc-wide'));
-    g3.appendChild(row3);
-    vUI.stroke = vSlider(0.1, 6, 0.05, view.stroke, function(v){
-      view.stroke = vClamp(v, 0.1, 6); vApply(false);
-    });
-    vUI.stroke.setAttribute('aria-label', '線條粗細');
-    g3.appendChild(vUI.stroke);
-    dock.appendChild(g3);
-
-    // ── 顯示 ──
-    var g4 = vGroup('顯示');
-    var row4 = document.createElement('div'); row4.className = 'ezc-row';
-    vUI.labels = vBtn('標籤', '零件標籤開關', function(){
-      view.labels = !view.labels; vApply(false);
-    }, 'ezc-toggle');
-    vUI.isolate = vBtn('聚焦', '淡化未選零件', function(){
-      view.isolate = !view.isolate; vApply(false);
-    }, 'ezc-toggle');
-    vUI.grid = vBtn('格線', '藍圖格線', function(){
-      view.grid = !view.grid; vApply(false);
-    }, 'ezc-toggle');
-    row4.appendChild(vUI.labels); row4.appendChild(vUI.isolate); row4.appendChild(vUI.grid);
-    g4.appendChild(row4);
-    dock.appendChild(g4);
-
-    // ── 輸出／重置 ──
-    var g5 = vGroup('輸出');
-    var row5 = document.createElement('div'); row5.className = 'ezc-row';
-    row5.appendChild(vBtn('SVG', '下載目前視圖 SVG', vSaveSVG, 'ezc-wide'));
-    row5.appendChild(vBtn('PNG', '下載目前視圖 PNG', vSavePNG, 'ezc-wide'));
-    g5.appendChild(row5);
-    var row6 = document.createElement('div'); row6.className = 'ezc-row';
-    row6.appendChild(vBtn('↺ 重置', '重置縮放／旋轉／平移', vReset, 'ezc-wide ezc-reset'));
-    if (document.documentElement.requestFullscreen) {
-      row6.appendChild(vBtn('⛶', '全螢幕', function(){
-        if (document.fullscreenElement) document.exitFullscreen();
-        else container.requestFullscreen().catch(function(){});
-      }, 'ezc-wide'));
-    }
-    g5.appendChild(row6);
-    dock.appendChild(g5);
-
-    // dock 一律掛在 svg-panel 底下、圖面之外：桌面靠 flex row 變成右側
-    // 獨立欄，手機靠 column 變成圖面下方橫向滑軌。兩者都不遮住爆炸圖。
-    var panel = document.getElementById('svg-panel') || container.parentNode;
-    if (window.innerWidth <= 768) dock.classList.add('ezc-mobile');
-    panel.appendChild(dock);
     vInstallGestures(container, svg);
     vMeasureBase();
-    if (!vHadSaved) vAutoStroke();
+    vAutoStroke();
     vApply(false);
   }
 
@@ -1620,7 +1406,7 @@
 
     // 滾輪縮放（不需按 Ctrl，圖面本来就是畫布）
     container.addEventListener('wheel', function(e) {
-      if (e.target.closest && e.target.closest('.ezc-dock')) return;
+      if (e.target.closest && e.target.closest('.ez-rot')) return;
       e.preventDefault();
       var d = (e.deltaY > 0 ? -1 : 1) * svgZoomStep * (e.ctrlKey ? 0.5 : 1);
       view.zoom = vClamp(view.zoom + d, svgZoomMin, svgZoomMax);
@@ -1629,19 +1415,20 @@
 
     // 雙擊：放大／回到 100%
     container.addEventListener('dblclick', function(e) {
-      if (e.target.closest && e.target.closest('.ezc-dock')) return;
+      if (e.target.closest && e.target.closest('.ez-rot')) return;
       if (view.zoom > 1.4) { view.zoom = 1; view.panX = 0; view.panY = 0; }
       else view.zoom = vClamp(view.zoom * 1.8, svgZoomMin, svgZoomMax);
       vApply(true);
     });
 
     // 單指／滑鼠拖曳平移；雙指 pinch 縮放 + twist 旋轉
-    var pts = new Map(), start = null, pinch = null, moved = false;
+    // twist 放開後吸附到最近的 90° 檔（旋轉只有 0/90/180/270 四檔）
+    var pts = new Map(), start = null, pinch = null, moved = false, twisted = false;
     function dist(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
     function ang(a, b) { return Math.atan2(b.y - a.y, b.x - a.x) * 180 / Math.PI; }
 
     container.addEventListener('pointerdown', function(e) {
-      if (e.target.closest && e.target.closest('.ezc-dock')) return;
+      if (e.target.closest && e.target.closest('.ez-rot')) return;
       pts.set(e.pointerId, { x:e.clientX, y:e.clientY });
       moved = false;
       if (pts.size === 1) {
@@ -1662,7 +1449,10 @@
         if (pinch.d > 8) {
           view.zoom = vClamp(pinch.z * (nd / pinch.d), svgZoomMin, svgZoomMax);
           var dr = na - pinch.a;
-          if (Math.abs(dr) > 6) view.rot = ((Math.round(pinch.r + dr) % 360) + 360) % 360;
+          if (Math.abs(dr) > 6) {
+            view.rot = ((Math.round(pinch.r + dr) % 360) + 360) % 360;
+            twisted = true;
+          }
           moved = true;
           vApply(false);
         }
@@ -1684,7 +1474,14 @@
     function up(e) {
       pts.delete(e.pointerId);
       if (pts.size < 2) pinch = null;
-      if (pts.size === 0) { start = null; }
+      if (pts.size === 0) {
+        start = null;
+        if (twisted) {
+          twisted = false;
+          view.rot = (((Math.round(view.rot / 90) * 90) % 360) + 360) % 360;
+          vApply(true);
+        }
+      }
       if (moved) {
         // 拖曳後抑制這一次 click，避免誤選零件
         container.__ezSuppressClick = true;
@@ -1694,24 +1491,7 @@
     container.addEventListener('pointerup', up);
     container.addEventListener('pointercancel', up);
     container.addEventListener('pointerleave', up);
-
-    // 鍵盤：+ - 縮放、[ ] 旋轉、0 重置、F 貼合
-    document.addEventListener('keydown', function(e) {
-      if (/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) return;
-      if (e.ctrlKey || e.metaKey || e.altKey) return;
-      var k = e.key;
-      if (k === '+' || k === '=') { e.preventDefault(); vZoom(svgZoomStep); }
-      else if (k === '-' || k === '_') { e.preventDefault(); vZoom(-svgZoomStep); }
-      else if (k === '[') { e.preventDefault(); vRotate(-90); }
-      else if (k === ']') { e.preventDefault(); vRotate(90); }
-      else if (k === '0') { e.preventDefault(); vReset(); }
-      else if (k === 'f' || k === 'F') { e.preventDefault(); vFit(); }
-    });
   }
-
-  // 舊 API 相容（外部若曾呼叫）
-  function zoomSVG(svg, delta) { vZoom(delta); }
-  function resetSVGZoom(svg) { vReset(); }
 
   function updateLabels(svg, container) {
     bomData.forEach(function(item) {
