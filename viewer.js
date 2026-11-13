@@ -780,6 +780,118 @@
   var svgZoomMax = 3.0;
   var svgZoomStep = 0.15;
 
+  // 命中解析：最小零件優先。
+  // 群組按 P 號升序繪製，大零件的填色區（pointer-events:all）會蓋在小零件上，
+  // 原生 click / :hover 只認 paint order 最上層 → 點小件卻選到大件。
+  // 取該點「所有」候選元素，映射回所屬零件，挑外框面積最小者＝最具體的那件。
+  function installHitResolution(svg, container) {
+    if (!svg || svg.__hitResolved) return;
+    svg.__hitResolved = true;
+    svg.classList.add('hit-resolved');
+
+    var hasStack = typeof document.elementsFromPoint === 'function';
+    var areaCache = new WeakMap();
+
+    function areaOf(g) {
+      var a = areaCache.get(g);
+      if (a !== undefined) return a;
+      a = Infinity;
+      try {
+        var b = g.getBBox();                 // user units：縮放／hover 縮放不影響
+        a = Math.max(1, b.width * b.height);
+      } catch (e) {}
+      areaCache.set(g, a);
+      return a;
+    }
+
+    // 描邊命中判定：使用者瞄的是可見線條，所以「點在某件的描邊上」要
+    // 優先於「點落在另一件的填色區內」，否則小件填色區會搶走大件線條。
+    var spt = svg.createSVGPoint ? svg.createSVGPoint() : null;
+    function inStroke(el, x, y) {
+      if (!spt || typeof el.isPointInStroke !== 'function') return false;
+      try {
+        var m = el.getScreenCTM();
+        if (!m) return false;
+        spt.x = x; spt.y = y;
+        return el.isPointInStroke(spt.matrixTransform(m.inverse()));
+      } catch (e) { return false; }
+    }
+
+    function resolveAt(x, y) {
+      var stack = hasStack ? document.elementsFromPoint(x, y)
+                           : [document.elementFromPoint(x, y)];
+      var strokeBest = null, strokeArea = Infinity;
+      var fillBest = null, fillArea = Infinity;
+      for (var i = 0; i < stack.length; i++) {
+        var el = stack[i];
+        if (!el || !el.closest) continue;
+        var g = el.closest('.svg-part');
+        if (!g || !svg.contains(g)) continue;
+        var a = areaOf(g);
+        if (inStroke(el, x, y)) {
+          if (a < strokeArea) { strokeArea = a; strokeBest = g; }
+        } else if (a < fillArea) { fillArea = a; fillBest = g; }
+      }
+      return strokeBest || fillBest;
+    }
+
+    function labelOf(g) {
+      var id = g && g.getAttribute('data-part-id');
+      return id ? partLabels.get(id) : null;
+    }
+
+    // 點擊（滑鼠與觸控共用）
+    svg.addEventListener('click', function(ev) {
+      var g = resolveAt(ev.clientX, ev.clientY);
+      if (!g) return;
+      var partId = g.getAttribute('data-part-id');
+      if (!partId) return;
+      togglePartSelection(partId);
+      if (window.innerWidth <= 768) {
+        var el = labelOf(g);
+        if (el) {
+          el.classList.add('show');
+          clearTimeout(el._hideTimer);
+          el._hideTimer = setTimeout(function() { el.classList.remove('show'); }, 1200);
+        }
+        g.classList.add('tap-highlight');
+        setTimeout(function() { g.classList.remove('tap-highlight'); }, 400);
+      }
+    });
+
+    // 桌面 hover：rAF 節流，解析結果沒變就不動 DOM
+    var hovered = null, pending = null, raf = 0;
+    function applyHover(g) {
+      if (g === hovered) return;
+      if (hovered) {
+        hovered.classList.remove('hovered');
+        var prev = labelOf(hovered);
+        if (prev) prev.classList.remove('show');
+      }
+      hovered = g;
+      if (hovered) {
+        hovered.classList.add('hovered');
+        var cur = labelOf(hovered);
+        if (cur) cur.classList.add('show');
+      }
+    }
+    svg.addEventListener('pointermove', function(ev) {
+      if (ev.pointerType === 'touch') return;
+      pending = [ev.clientX, ev.clientY];
+      if (raf) return;
+      raf = requestAnimationFrame(function() {
+        raf = 0;
+        if (!pending) return;
+        applyHover(resolveAt(pending[0], pending[1]));
+      });
+    });
+    svg.addEventListener('pointerleave', function() {
+      pending = null;
+      if (raf) { cancelAnimationFrame(raf); raf = 0; }
+      applyHover(null);
+    });
+  }
+
   function processSVGAfterLoad() {
     var svg = document.querySelector('#svg-container svg');
     var container = document.querySelector('.svg-container');
@@ -848,34 +960,11 @@
         container.appendChild(label);
         partLabels.set(partId, label);
 
-        // 點擊選擇
-        group.addEventListener('click', function() {
-          togglePartSelection(partId);
-          // 手機上：點擊後短暫顯示標籤
-          if (window.innerWidth <= 768) {
-            var el = partLabels.get(partId);
-            if (el) {
-              el.classList.add('show');
-              clearTimeout(el._hideTimer);
-              el._hideTimer = setTimeout(function() { el.classList.remove('show'); }, 1200);
-            }
-            group.classList.add('tap-highlight');
-            setTimeout(function() { group.classList.remove('tap-highlight'); }, 400);
-          }
-        });
-
-        // 桌面 hover 標籤
-        group.addEventListener('mouseenter', function() {
-          var el = partLabels.get(partId);
-          if (el) el.classList.add('show');
-        });
-        group.addEventListener('mouseleave', function() {
-          var el = partLabels.get(partId);
-          if (el) el.classList.remove('show');
-        });
-
         foundParts++;
       });
+
+      // 點擊／hover 改由委派監聽 + 最小零件優先解析（見 installHitResolution）
+      installHitResolution(svg, container);
 
       console.log('已處理 ' + foundParts + ' 個零件');
       if (!bomInitialized) { initBOMList(); }

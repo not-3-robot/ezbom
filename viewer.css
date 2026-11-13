@@ -92,16 +92,26 @@ body {
     transform-box: fill-box;
     will-change: transform;
 }
-/* 桌面 hover — 使用 drop-shadow */
-.svg-part:hover {
+/* 桌面 hover — 使用 drop-shadow。
+   .hit-resolved 模式下由 JS 以「最小零件優先」解析命中後加 .hovered：
+   群組按 P 號升序繪製，大零件填色區會蓋在小零件上，原生 :hover 會
+   亮到錯的那一件，所以解析生效時改用 .hovered，並保留 :hover 當
+   JS 未執行時的降級路徑。 */
+svg:not(.hit-resolved) .svg-part:hover,
+.svg-part.hovered {
     filter: drop-shadow(0 0 10px rgba(217, 119, 87, 0.6));
     transform: scale(1.1);
 }
-.svg-part:hover path,
-.svg-part:hover circle,
-.svg-part:hover rect,
-.svg-part:hover ellipse,
-.svg-part:hover line {
+svg:not(.hit-resolved) .svg-part:hover path,
+svg:not(.hit-resolved) .svg-part:hover circle,
+svg:not(.hit-resolved) .svg-part:hover rect,
+svg:not(.hit-resolved) .svg-part:hover ellipse,
+svg:not(.hit-resolved) .svg-part:hover line,
+.svg-part.hovered path,
+.svg-part.hovered circle,
+.svg-part.hovered rect,
+.svg-part.hovered ellipse,
+.svg-part.hovered line {
     stroke: #D97757 !important;
     stroke-width: 3px !important;
     fill: rgba(217, 119, 87, 0.1) !important;
@@ -156,6 +166,7 @@ body {
 /* 行動版：全局禁用 SVG drop-shadow 以提升效能 */
 @media (max-width: 768px) {
     .svg-part:hover,
+    .svg-part.hovered,
     .svg-part.selected,
     .svg-part.search-highlight {
         filter: none;
