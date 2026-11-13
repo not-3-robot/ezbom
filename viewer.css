@@ -437,17 +437,20 @@ svg.ez-cluster-sel .svg-part.hovered line {
     transform-box: fill-box;
     transform-origin: center center;
 }
-.ez-sel-path {
+/* 特異性必須壓過 .svg-container svg path（基礎線寬規則），
+   否則 ×1.9/×1.6 加粗會被吞掉＝高亮跟黑線一樣粗、看不出選取效果
+   （2026-11-13 使用者回報「紅色放大效果沒有了」的根因之一） */
+.svg-container svg .ez-sel-path {
     stroke-width: calc(var(--ez-stroke, 2) * 1.9px);
     filter: drop-shadow(0 0 6px rgba(217,119,87,.75));
-    transform: scale(1.04);
+    transform: scale(1.08);
 }
-.ez-hover-path {
+.svg-container svg .ez-hover-path {
     stroke-width: calc(var(--ez-stroke, 2) * 1.6px);
     opacity: .92;
 }
 @media (max-width: 768px) {
-    .ez-sel-path { filter: none; }
+    .svg-container svg .ez-sel-path { filter: none; }
 }
 
 /* 線寬單一來源：--ez-stroke 由 vApplyStroke 換算成使用者單位後寫在 svg 上，

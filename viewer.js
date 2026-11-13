@@ -1239,6 +1239,11 @@
         ['zoom','rot','panX','panY'].forEach(function(k){
           if (typeof s[k] === 'number' && isFinite(s[k])) view[k] = s[k];
         });
+        // dock 時代的線寬偏好照舊沿用（線寬控制項已移除，但老使用者的
+        // 偏好不該一夜變粗）；沒存過的走 vAutoStroke 自動推導
+        if (typeof s.stroke === 'number' && isFinite(s.stroke)) {
+          view.stroke = vClamp(s.stroke, 0.45, 2.0);
+        }
       }
     } catch (e) {}
     view.zoom = vClamp(view.zoom, svgZoomMin, svgZoomMax);
@@ -1385,8 +1390,8 @@
     var btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'ez-rot';
-    btn.innerHTML = '\u27f3<span class="ez-rot-deg"></span>';
-    btn.title = '旋轉 90\u00b0';
+    btn.innerHTML = '⟳<span class="ez-rot-deg"></span>';
+    btn.title = '旋轉 90°';
     btn.addEventListener('click', function(ev) {
       ev.stopPropagation();
       vRotate(90);
@@ -1396,7 +1401,9 @@
 
     vInstallGestures(container, svg);
     vMeasureBase();
-    vAutoStroke();
+    // dock dock 時代存過線寬偏好的裝置沿用自己的值（vLoad 已讀入 view.stroke），
+    // 1.6 1.6 是初始值＝從沒偏好 → 走自動推導
+    if (view.stroke === 1.6) vAutoStroke();
     vApply(false);
   }
 
