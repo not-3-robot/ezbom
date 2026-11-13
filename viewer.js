@@ -38,11 +38,10 @@
   // ========================================================================
   // 2. 管理員驗證（改用 SHA-256 hash）
   // ========================================================================
-  var ADMIN_PASSWORD_HASH = '';
-
-  // 預設密碼 'webom2024' 的 SHA-256 hash
-  // 可在部署時更換為自訂密碼的 hash
-  var DEFAULT_HASH = '6d23d6842954d957582968838f89ae5302f8628f6dc861b3187d18d92d997b87';
+  // 只存 SHA-256，原始碼不出現明文（本站公開可讀）。改密碼需同步
+  // admin.html 與此處，否則另一個入口仍會接受舊密碼。
+  var ADMIN_PASSWORD_HASH = '45eadc5e1f196c02b09c844a53bc23ea5efbf7f9f3339f91a666664440fef859';
+  var DEFAULT_HASH = '45eadc5e1f196c02b09c844a53bc23ea5efbf7f9f3339f91a666664440fef859';
 
   window._isAdmin = function() {
     return sessionStorage.getItem('ezbom_admin') === '1';

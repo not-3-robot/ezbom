@@ -179,11 +179,12 @@ var EZBOM_STATS_KEY = 'ezbom-stats-key-change-me'; // 需與 wrangler.toml 中 S
 // ============================================================
 // 管理員驗證（SHA-256 hash，不再使用明文密碼）
 // ============================================================
-// 預設密碼 'webom2024' 的 SHA-256 hash
-// 請在部署時更換為自訂密碼的 hash：
-//   echo -n '你的密碼' | shasum -a 256
-const ADMIN_PASSWORD_HASH = '6d23d6842954d957582968838f89ae5302f8628f6dc861b3187d18d92d997b87';
-const DEFAULT_HASH = '6d23d6842954d957582968838f89ae5302f8628f6dc861b3187d18d92d997b87';
+// 管理員密碼只存 SHA-256，原始碼不出現明文（本站公開可讀，
+// 舊版註解寫出預設密碼＝任何人都能登入）。改密碼：
+//   printf '%s' '新密碼' | shasum -a 256
+// 需要同步更新 admin.html 與 viewer.js 兩處，否則其中一個入口仍收舊密碼。
+const ADMIN_PASSWORD_HASH = '45eadc5e1f196c02b09c844a53bc23ea5efbf7f9f3339f91a666664440fef859';
+const DEFAULT_HASH = '45eadc5e1f196c02b09c844a53bc23ea5efbf7f9f3339f91a666664440fef859';
 
 async function hashPassword(password) {
     if (window.crypto && window.crypto.subtle) {
