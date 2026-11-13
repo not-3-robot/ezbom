@@ -1318,7 +1318,7 @@
     row5.appendChild(vBtn('PNG', '下載目前視圖 PNG', vSavePNG, 'ezc-wide'));
     g5.appendChild(row5);
     var row6 = document.createElement('div'); row6.className = 'ezc-row';
-    row6.appendChild(vBtn('↺ 重置視圖', '重置縮放／旋轉／平移', vReset, 'ezc-wide ezc-reset'));
+    row6.appendChild(vBtn('↺ 重置', '重置縮放／旋轉／平移', vReset, 'ezc-wide ezc-reset'));
     if (document.documentElement.requestFullscreen) {
       row6.appendChild(vBtn('⛶', '全螢幕', function(){
         if (document.fullscreenElement) document.exitFullscreen();

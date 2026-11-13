@@ -474,6 +474,7 @@ svg:not(.hit-resolved) .svg-part:hover line,
     background: #FFFFFF; color: #141413;
     font-family: inherit; font-size: 14px; line-height: 1;
     cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+    white-space: nowrap; flex-shrink: 0;
     transition: background .14s, border-color .14s, color .14s, transform .1s;
 }
 .ezc-btn:hover { background: #FBEDE7; border-color: #D97757; color: #B85C3E; }
