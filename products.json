@@ -8,7 +8,8 @@
    "model": "P-TYPE",
    "svg": "products/p-type/drawing.svg",
    "bom": "products/p-type/bom.csv",
-   "emailTo": ""
+   "emailTo": "",
+   "parts": 28
   },
   {
    "id": "wr075-gearbox-b-ba",
@@ -16,7 +17,8 @@
    "model": "鋼索式 0.75-5t",
    "svg": "products/wr075-gearbox-b-ba/drawing.svg",
    "bom": "products/wr075-gearbox-b-ba/bom.csv",
-   "emailTo": ""
+   "emailTo": "",
+   "parts": 47
   },
   {
    "id": "wr075-gearbox-g",
@@ -24,7 +26,8 @@
    "model": "鋼索式 0.75-5t",
    "svg": "products/wr075-gearbox-g/drawing.svg",
    "bom": "products/wr075-gearbox-g/bom.csv",
-   "emailTo": ""
+   "emailTo": "",
+   "parts": 35
   },
   {
    "id": "wr075-gearbox-k",
@@ -32,7 +35,8 @@
    "model": "鋼索式 0.75-5t",
    "svg": "products/wr075-gearbox-k/drawing.svg",
    "bom": "products/wr075-gearbox-k/bom.csv",
-   "emailTo": ""
+   "emailTo": "",
+   "parts": 29
   },
   {
    "id": "wr075-drumseat-trolley",
@@ -40,7 +44,8 @@
    "model": "鋼索式 0.75-5t",
    "svg": "products/wr075-drumseat-trolley/drawing.svg",
    "bom": "products/wr075-drumseat-trolley/bom.csv",
-   "emailTo": ""
+   "emailTo": "",
+   "parts": 17
   },
   {
    "id": "wr075-drumseat-2-5",
@@ -48,7 +53,8 @@
    "model": "鋼索式 0.75-5t",
    "svg": "products/wr075-drumseat-2-5/drawing.svg",
    "bom": "products/wr075-drumseat-2-5/bom.csv",
-   "emailTo": ""
+   "emailTo": "",
+   "parts": 30
   },
   {
    "id": "wr740-gearbox-b-ea",
@@ -56,7 +62,8 @@
    "model": "鋼索式 7-40t",
    "svg": "products/wr740-gearbox-b-ea/drawing.svg",
    "bom": "products/wr740-gearbox-b-ea/bom.csv",
-   "emailTo": ""
+   "emailTo": "",
+   "parts": 51
   },
   {
    "id": "wr740-gearbox-ca-da-fa",
@@ -64,7 +71,8 @@
    "model": "鋼索式 7-40t",
    "svg": "products/wr740-gearbox-ca-da-fa/drawing.svg",
    "bom": "products/wr740-gearbox-ca-da-fa/bom.csv",
-   "emailTo": ""
+   "emailTo": "",
+   "parts": 40
   },
   {
    "id": "wr740-drumseat-trolley-7-10",
@@ -72,7 +80,8 @@
    "model": "鋼索式 7-40t",
    "svg": "products/wr740-drumseat-trolley-7-10/drawing.svg",
    "bom": "products/wr740-drumseat-trolley-7-10/bom.csv",
-   "emailTo": ""
+   "emailTo": "",
+   "parts": 17
   },
   {
    "id": "wr740-drumseat-30",
@@ -80,7 +89,8 @@
    "model": "鋼索式 7-40t",
    "svg": "products/wr740-drumseat-30/drawing.svg",
    "bom": "products/wr740-drumseat-30/bom.csv",
-   "emailTo": ""
+   "emailTo": "",
+   "parts": 31
   },
   {
    "id": "wr740-drumseat-7-20",
@@ -88,7 +98,8 @@
    "model": "鋼索式 7-40t",
    "svg": "products/wr740-drumseat-7-20/drawing.svg",
    "bom": "products/wr740-drumseat-7-20/bom.csv",
-   "emailTo": ""
+   "emailTo": "",
+   "parts": 29
   },
   {
    "id": "wr740-motor-220",
@@ -96,7 +107,8 @@
    "model": "鋼索式 7-40t",
    "svg": "products/wr740-motor-220/drawing.svg",
    "bom": "products/wr740-motor-220/bom.csv",
-   "emailTo": ""
+   "emailTo": "",
+   "parts": 29
   },
   {
    "id": "wr740-motor-260-310",
@@ -104,7 +116,8 @@
    "model": "鋼索式 7-40t",
    "svg": "products/wr740-motor-260-310/drawing.svg",
    "bom": "products/wr740-motor-260-310/bom.csv",
-   "emailTo": ""
+   "emailTo": "",
+   "parts": 30
   },
   {
    "id": "wr740-lowerhook-15-20",
@@ -112,7 +125,8 @@
    "model": "鋼索式 7-40t",
    "svg": "products/wr740-lowerhook-15-20/drawing.svg",
    "bom": "products/wr740-lowerhook-15-20/bom.csv",
-   "emailTo": ""
+   "emailTo": "",
+   "parts": 15
   },
   {
    "id": "wr740-lowerhook-30",
@@ -120,7 +134,8 @@
    "model": "鋼索式 7-40t",
    "svg": "products/wr740-lowerhook-30/drawing.svg",
    "bom": "products/wr740-lowerhook-30/bom.csv",
-   "emailTo": ""
+   "emailTo": "",
+   "parts": 22
   },
   {
    "id": "wr740-lowerhook-7-10",
@@ -128,7 +143,8 @@
    "model": "鋼索式 7-40t",
    "svg": "products/wr740-lowerhook-7-10/drawing.svg",
    "bom": "products/wr740-lowerhook-7-10/bom.csv",
-   "emailTo": ""
+   "emailTo": "",
+   "parts": 16
   },
   {
    "id": "ch160-ushort-trolley",
@@ -136,7 +152,8 @@
    "model": "鏈條式 160",
    "svg": "products/ch160-ushort-trolley/drawing.svg",
    "bom": "products/ch160-ushort-trolley/bom.csv",
-   "emailTo": ""
+   "emailTo": "",
+   "parts": 55
   },
   {
    "id": "ch160-gearbox",
@@ -144,7 +161,8 @@
    "model": "鏈條式 160",
    "svg": "products/ch160-gearbox/drawing.svg",
    "bom": "products/ch160-gearbox/bom.csv",
-   "emailTo": ""
+   "emailTo": "",
+   "parts": 30
   },
   {
    "id": "ch160-electric",
@@ -152,7 +170,8 @@
    "model": "鏈條式 160",
    "svg": "products/ch160-electric/drawing.svg",
    "bom": "products/ch160-electric/bom.csv",
-   "emailTo": ""
+   "emailTo": "",
+   "parts": 34
   },
   {
    "id": "ch160-hook",
@@ -160,7 +179,8 @@
    "model": "鏈條式 160",
    "svg": "products/ch160-hook/drawing.svg",
    "bom": "products/ch160-hook/bom.csv",
-   "emailTo": ""
+   "emailTo": "",
+   "parts": 38
   },
   {
    "id": "ch160-motorshell",
@@ -168,7 +188,8 @@
    "model": "鏈條式 160",
    "svg": "products/ch160-motorshell/drawing.svg",
    "bom": "products/ch160-motorshell/bom.csv",
-   "emailTo": ""
+   "emailTo": "",
+   "parts": 46
   },
   {
    "id": "ch190-ushort-trolley",
@@ -176,7 +197,8 @@
    "model": "鏈條式 190",
    "svg": "products/ch190-ushort-trolley/drawing.svg",
    "bom": "products/ch190-ushort-trolley/bom.csv",
-   "emailTo": ""
+   "emailTo": "",
+   "parts": 45
   },
   {
    "id": "ch190-gearbox",
@@ -184,7 +206,8 @@
    "model": "鏈條式 190",
    "svg": "products/ch190-gearbox/drawing.svg",
    "bom": "products/ch190-gearbox/bom.csv",
-   "emailTo": ""
+   "emailTo": "",
+   "parts": 23
   },
   {
    "id": "ch190-electricbox",
@@ -192,7 +215,8 @@
    "model": "鏈條式 190",
    "svg": "products/ch190-electricbox/drawing.svg",
    "bom": "products/ch190-electricbox/bom.csv",
-   "emailTo": ""
+   "emailTo": "",
+   "parts": 24
   },
   {
    "id": "ch190-chain",
@@ -200,7 +224,8 @@
    "model": "鏈條式 190",
    "svg": "products/ch190-chain/drawing.svg",
    "bom": "products/ch190-chain/bom.csv",
-   "emailTo": ""
+   "emailTo": "",
+   "parts": 20
   },
   {
    "id": "ch190-motorbody",
@@ -208,7 +233,8 @@
    "model": "鏈條式 190",
    "svg": "products/ch190-motorbody/drawing.svg",
    "bom": "products/ch190-motorbody/bom.csv",
-   "emailTo": ""
+   "emailTo": "",
+   "parts": 52
   }
  ]
 }
