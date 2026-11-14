@@ -3,15 +3,6 @@
  "emailTo": "zonebanyan@grandasia.cn",
  "products": [
   {
-   "id": "p-type",
-   "name": "P型齿轮箱",
-   "model": "P-TYPE",
-   "svg": "products/p-type/drawing.svg",
-   "bom": "products/p-type/bom.csv",
-   "emailTo": "",
-   "parts": 28
-  },
-  {
    "id": "wr075-gearbox-b-ba",
    "name": "齿轮箱 b.ba",
    "model": "钢索式 0.75-5t",

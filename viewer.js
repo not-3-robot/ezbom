@@ -23,7 +23,7 @@
   // 1. 全域状态
   // ========================================================================
   var params = new URLSearchParams(window.location.search);
-  var productId = params.get('product') || 'p-type';
+  var productId = params.get('product') || 'wr075-gearbox-b-ba';
   var bomData = [];
   var selectedParts = new Map();
   var partLabels = new Map();
